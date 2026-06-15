@@ -1,11 +1,7 @@
 {
-    "buildCommand": "pip install -r requirements.txt",
-    "functions": {
-        "api/index.py": {
-            "memory": 256,
-            "maxDuration": 30
-        }
-    },
+    "builds": [
+        { "src": "api/index.py", "use": "@vercel/python" }
+    ],
     "rewrites": [
         { "source": "/(.*)", "destination": "/api/index.py" }
     ]
