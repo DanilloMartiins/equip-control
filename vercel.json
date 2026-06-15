@@ -1,0 +1,12 @@
+{
+    "buildCommand": "pip install -r requirements.txt",
+    "functions": {
+        "api/**": {
+            "memory": 256,
+            "maxDuration": 30
+        }
+    },
+    "rewrites": [
+        { "source": "/(.*)", "destination": "/api/index.py" }
+    ]
+}

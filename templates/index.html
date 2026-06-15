@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h4 class="mb-0 text-axia"><i class="bi bi-grid-1x2-fill me-2"></i>Dashboard</h4>
+        <p class="text-muted">Resumo geral dos equipamentos cadastrados</p>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card stat-card border-start border-primary border-4">
+            <div class="card-body text-center">
+                <h3 class="display-4 fw-bold text-primary mb-0">{{ total }}</h3>
+                <p class="text-muted mb-0">Total de Equipamentos</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card border-start border-success border-4">
+            <div class="card-body text-center">
+                <h3 class="display-4 fw-bold text-success mb-0">{{ por_regional|length }}</h3>
+                <p class="text-muted mb-0">Regionais</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card border-start border-info border-4">
+            <div class="card-body text-center">
+                <h3 class="display-4 fw-bold text-info mb-0">{{ por_tipo|length }}</h3>
+                <p class="text-muted mb-0">Tipos de Equipamento</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <i class="bi bi-geo-alt-fill text-primary"></i> Equipamentos por Regional
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-axia mb-0">
+                    <thead><tr><th>Regional</th><th class="text-center">Quantidade</th></tr></thead>
+                    <tbody>
+                        {% for r in por_regional %}
+                        <tr>
+                            <td><strong>{{ r.regional }}</strong></td>
+                            <td class="text-center">{{ r.qtd }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="2" class="text-center text-muted py-3">Nenhum dado cadastrado</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <i class="bi bi-boxes text-primary"></i> Equipamentos por Tipo
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-axia mb-0">
+                    <thead><tr><th>Tipo</th><th class="text-center">Quantidade</th></tr></thead>
+                    <tbody>
+                        {% for t in por_tipo %}
+                        <tr>
+                            <td>{{ t.tipo }}</td>
+                            <td class="text-center">{{ t.qtd }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="2" class="text-center text-muted py-3">Nenhum dado cadastrado</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-3">
+    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-clock-history text-primary"></i> Últimos Cadastros</span>
+        <a href="/relatorio" class="btn btn-sm btn-axia">Ver Relatório Completo</a>
+    </div>
+    <div class="card-body p-0">
+        <table class="table table-axia mb-0">
+            <thead>
+                <tr>
+                    <th>Código</th><th>Regional</th><th>Tipo</th><th>Data Cadastro</th><th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for eq in recentes %}
+                <tr>
+                    <td>{{ eq.codigo }}</td>
+                    <td>{{ eq.regional }}</td>
+                    <td>{{ eq.tipo }}</td>
+                    <td>{{ eq.data_cadastro or '-' }}</td>
+                    <td>
+                        <form action="/deletar/{{ eq.id }}" method="POST" style="display:inline"
+                              onsubmit="return confirm('Remover equipamento {{ eq.codigo }}?')">
+                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5" class="text-center text-muted py-4">Nenhum equipamento cadastrado ainda.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0 text-axia"><i class="bi bi-plus-circle-fill me-2"></i>Cadastrar Equipamento</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Código do Equipamento *</label>
+                            <input type="text" class="form-control" name="codigo" required
+                                   placeholder="Ex: 12412764">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Regional *</label>
+                            <select class="form-select" name="regional" required>
+                                <option value="">Selecione...</option>
+                                {% for r in regionais %}
+                                <option value="{{ r }}">{{ r }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Tipo de Equipamento *</label>
+                            <input type="text" class="form-control" name="tipo" required
+                                   placeholder="Ex: Disjuntor, Relé...">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Data de Cadastro</label>
+                            <input type="date" class="form-control" name="data_cadastro" value="{{ hoje }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Data de Solicitação de Envio</label>
+                            <input type="date" class="form-control" name="data_solicitacao" value="{{ hoje }}">
+                        </div>
+                    </div>
+                    <div class="mt-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-axia"><i class="bi bi-check-lg"></i> Salvar</button>
+                        <a href="/" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

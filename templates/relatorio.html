@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0 text-axia"><i class="bi bi-file-earmark-text-fill me-2"></i>Relatório de Equipamentos</h4>
+    <a href="/exportar" class="btn btn-axia"><i class="bi bi-download"></i> Baixar Excel</a>
+</div>
+
+<div class="row g-2 mb-3">
+    <div class="col-md-4">
+        <div class="card stat-card border-start border-primary border-4">
+            <div class="card-body text-center py-2">
+                <span class="fs-3 fw-bold text-primary">{{ total }}</span>
+                <small class="d-block text-muted">Total</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card border-start border-success border-4">
+            <div class="card-body text-center py-2">
+                <span class="fs-3 fw-bold text-success">{{ por_regional|length }}</span>
+                <small class="d-block text-muted">Regionais</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card border-start border-info border-4">
+            <div class="card-body text-center py-2">
+                <span class="fs-3 fw-bold text-info">{{ por_tipo|length }}</span>
+                <small class="d-block text-muted">Tipos</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header bg-white fw-semibold">
+        <i class="bi bi-table me-2 text-primary"></i>Equipamentos Cadastrados
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-axia mb-0">
+                <thead>
+                    <tr>
+                        <th>Nº Equipamento</th>
+                        <th>Regional</th>
+                        <th>Tipo</th>
+                        <th>Data Cadastro</th>
+                        <th>Data Solicitação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for eq in equipamentos %}
+                    <tr>
+                        <td>{{ eq.codigo }}</td>
+                        <td>{{ eq.regional }}</td>
+                        <td>{{ eq.tipo }}</td>
+                        <td>{{ eq.data_cadastro or '-' }}</td>
+                        <td>{{ eq.data_solicitacao or '-' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-center text-muted py-4">Nenhum equipamento cadastrado.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-white fw-semibold">
+                <i class="bi bi-geo-alt-fill text-primary me-2"></i>Resumo por Regional
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-axia mb-0">
+                    <thead><tr><th>Regional</th><th class="text-center">Quantidade</th></tr></thead>
+                    <tbody>
+                        {% for r in por_regional %}
+                        <tr>
+                            <td><strong>{{ r.regional }}</strong></td>
+                            <td class="text-center">{{ r.qtd }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-white fw-semibold">
+                <i class="bi bi-boxes text-primary me-2"></i>Resumo por Tipo
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-axia mb-0">
+                    <thead><tr><th>Tipo</th><th class="text-center">Quantidade</th></tr></thead>
+                    <tbody>
+                        {% for t in por_tipo %}
+                        <tr>
+                            <td>{{ t.tipo }}</td>
+                            <td class="text-center">{{ t.qtd }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
