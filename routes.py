@@ -17,7 +17,7 @@ bp = Blueprint('routes', __name__)
 @bp.route('/')
 def index() -> str:
     conn = get_db()
-    total = conn.execute("SELECT COUNT(*) FROM equipamentos").fetchone()[0]
+    total = conn.execute("SELECT COUNT(*) AS total FROM equipamentos").fetchone()['total']
     por_regional = conn.execute("""
         SELECT regional, COUNT(*) as qtd FROM equipamentos
         GROUP BY regional ORDER BY qtd DESC
@@ -140,7 +140,7 @@ def relatorio() -> str:
     por_tipo = conn.execute("""
         SELECT tipo, COUNT(*) as qtd FROM equipamentos GROUP BY tipo ORDER BY qtd DESC
     """).fetchall()
-    total = conn.execute("SELECT COUNT(*) FROM equipamentos").fetchone()[0]
+    total = conn.execute("SELECT COUNT(*) AS total FROM equipamentos").fetchone()['total']
     conn.close()
 
     return render_template('relatorio.html',
@@ -162,7 +162,7 @@ def exportar():
     por_tipo = conn.execute("""
         SELECT tipo, COUNT(*) as qtd FROM equipamentos GROUP BY tipo ORDER BY qtd DESC
     """).fetchall()
-    total = conn.execute("SELECT COUNT(*) FROM equipamentos").fetchone()[0]
+    total = conn.execute("SELECT COUNT(*) AS total FROM equipamentos").fetchone()['total']
     conn.close()
 
     wb = Workbook()
