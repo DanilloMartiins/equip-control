@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8">
+    <div class="col-md-10">
         <div class="card">
             <div class="card-header bg-white">
                 <h5 class="mb-0 text-axia"><i class="bi bi-plus-circle-fill me-2"></i>Cadastrar Equipamento</h5>
@@ -26,7 +26,37 @@
                         <div class="col-md-4">
                             <label class="form-label fw-semibold">Tipo de Equipamento *</label>
                             <input type="text" class="form-control" name="tipo" required
-                                   placeholder="Ex: Disjuntor, Relé...">
+                                   placeholder="Ex: Disjuntor, Transformador...">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Fabricante</label>
+                            <input type="text" class="form-control" name="fabricante"
+                                   placeholder="Ex: Siemens, Balteau...">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Modelo</label>
+                            <input type="text" class="form-control" name="modelo">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Nº de Série</label>
+                            <input type="text" class="form-control" name="numero_serie">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Local de Instalação</label>
+                            <input type="text" class="form-control" name="local_instalacao"
+                                   placeholder="Ex: F-S-STADR-TR55-MC500-TC9107-A">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">ID BDIT</label>
+                            <input type="text" class="form-control" name="idBDIT">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-semibold">Origem</label>
+                            <select class="form-select" name="origem">
+                                <option value="oficio">Ofício</option>
+                                <option value="empreendimento">Empreendimento</option>
+                                <option value="legado">Legado</option>
+                            </select>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-semibold">Data de Cadastro</label>

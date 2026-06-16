@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0 text-axia"><i class="bi bi-pencil-fill me-2"></i>Editar Equipamento</h5>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Código</label>
+                            <input type="text" class="form-control" name="codigo" value="{{ eq.codigo }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Regional</label>
+                            <select class="form-select" name="regional" required>
+                                {% for r in regionais %}
+                                <option value="{{ r }}" {% if eq.regional == r %}selected{% endif %}>{{ r }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Tipo</label>
+                            <input type="text" class="form-control" name="tipo" value="{{ eq.tipo }}" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Fabricante</label>
+                            <input type="text" class="form-control" name="fabricante" value="{{ eq.fabricante or '' }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Modelo</label>
+                            <input type="text" class="form-control" name="modelo" value="{{ eq.modelo or '' }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Nº Série</label>
+                            <input type="text" class="form-control" name="numero_serie" value="{{ eq.numero_serie or '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Local Instalação</label>
+                            <input type="text" class="form-control" name="local_instalacao" value="{{ eq.local_instalacao or '' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">ID BDIT</label>
+                            <input type="text" class="form-control" name="idBDIT" value="{{ eq.idbdit or '' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Origem</label>
+                            <select class="form-select" name="origem">
+                                <option value="oficio" {% if eq.origem == 'oficio' %}selected{% endif %}>Ofício</option>
+                                <option value="empreendimento" {% if eq.origem == 'empreendimento' %}selected{% endif %}>Empreendimento</option>
+                                <option value="legado" {% if eq.origem == 'legado' %}selected{% endif %}>Legado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" name="status">
+                                <option value="pendente" {% if eq.status == 'pendente' %}selected{% endif %}>Pendente</option>
+                                <option value="cadastrado" {% if eq.status == 'cadastrado' %}selected{% endif %}>Cadastrado</option>
+                                <option value="enviado" {% if eq.status == 'enviado' %}selected{% endif %}>Enviado</option>
+                                <option value="concluido" {% if eq.status == 'concluido' %}selected{% endif %}>Concluído</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Data Cadastro</label>
+                            <input type="date" class="form-control" name="data_cadastro" value="{{ eq.data_cadastro or '' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Data Solicitação</label>
+                            <input type="date" class="form-control" name="data_solicitacao" value="{{ eq.data_solicitacao or '' }}">
+                        </div>
+                    </div>
+                    <div class="mt-4 d-flex gap-2">
+                        <button type="submit" class="btn btn-axia"><i class="bi bi-check-lg"></i> Salvar</button>
+                        <a href="/equipamento/{{ eq.id }}" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

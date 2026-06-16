@@ -8,15 +8,15 @@
 </div>
 
 <div class="row g-3 mb-4">
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card stat-card border-start border-primary border-4">
             <div class="card-body text-center">
                 <h3 class="display-4 fw-bold text-primary mb-0">{{ total }}</h3>
-                <p class="text-muted mb-0">Total de Equipamentos</p>
+                <p class="text-muted mb-0">Total</p>
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card stat-card border-start border-success border-4">
             <div class="card-body text-center">
                 <h3 class="display-4 fw-bold text-success mb-0">{{ por_regional|length }}</h3>
@@ -24,11 +24,19 @@
             </div>
         </div>
     </div>
-    <div class="col-md-4">
+    <div class="col-md-3">
         <div class="card stat-card border-start border-info border-4">
             <div class="card-body text-center">
                 <h3 class="display-4 fw-bold text-info mb-0">{{ por_tipo|length }}</h3>
-                <p class="text-muted mb-0">Tipos de Equipamento</p>
+                <p class="text-muted mb-0">Tipos</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card border-start border-warning border-4">
+            <div class="card-body text-center">
+                <h3 class="display-4 fw-bold text-warning mb-0">{{ pendentes }}</h3>
+                <p class="text-muted mb-0">Pendentes</p>
             </div>
         </div>
     </div>
@@ -90,17 +98,26 @@
         <table class="table table-axia mb-0">
             <thead>
                 <tr>
-                    <th>Código</th><th>Regional</th><th>Tipo</th><th>Data Cadastro</th><th>Ações</th>
+                    <th>Código</th><th>Regional</th><th>Tipo</th><th>Status</th><th>Origem</th><th>Data Cadastro</th><th>Ações</th>
                 </tr>
             </thead>
             <tbody>
+                {% set status_badge = {
+                    'pendente': 'warning',
+                    'enviado': 'success',
+                    'cadastrado': 'info',
+                    'concluido': 'primary'
+                } %}
                 {% for eq in recentes %}
                 <tr>
-                    <td>{{ eq.codigo }}</td>
+                    <td><a href="/equipamento/{{ eq.id }}">{{ eq.codigo }}</a></td>
                     <td>{{ eq.regional }}</td>
                     <td>{{ eq.tipo }}</td>
+                    <td><span class="badge bg-{{ status_badge.get(eq.status, 'secondary') }}">{{ eq.status or 'pendente' }}</span></td>
+                    <td>{{ eq.origem or 'oficio' }}</td>
                     <td>{{ eq.data_cadastro or '-' }}</td>
                     <td>
+                        <a href="/equipamento/{{ eq.id }}" class="btn btn-sm btn-outline-primary" title="Detalhes"><i class="bi bi-eye"></i></a>
                         <form action="/deletar/{{ eq.id }}" method="POST" style="display:inline"
                               onsubmit="return confirm('Remover equipamento {{ eq.codigo }}?')">
                             <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
@@ -108,7 +125,7 @@
                     </td>
                 </tr>
                 {% else %}
-                <tr><td colspan="5" class="text-center text-muted py-4">Nenhum equipamento cadastrado ainda.</td></tr>
+                <tr><td colspan="7" class="text-center text-muted py-4">Nenhum equipamento cadastrado ainda.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

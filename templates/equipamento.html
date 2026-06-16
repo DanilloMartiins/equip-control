@@ -1,0 +1,210 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0 text-axia"><i class="bi bi-info-circle-fill me-2"></i>Detalhe do Equipamento</h4>
+    <div>
+        <a href="/equipamento/{{ eq.id }}/editar" class="btn btn-axia btn-sm"><i class="bi bi-pencil"></i> Editar</a>
+        <a href="/" class="btn btn-outline-secondary btn-sm">Voltar</a>
+    </div>
+</div>
+
+{% set status_badge = {
+    'pendente': 'warning',
+    'enviado': 'success',
+    'cadastrado': 'info',
+    'concluido': 'primary'
+} %}
+
+{% set origem_icon = {
+    'oficio': 'bi-file-earmark-text',
+    'empreendimento': 'bi-building',
+    'legado': 'bi-archive'
+} %}
+
+<div class="row g-3 mb-4">
+    <div class="col-md-8">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <i class="bi bi-tag text-primary"></i> Dados do Equipamento
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-sm table-borderless">
+                            <tr><td class="text-muted">Código:</td><td class="fw-bold">{{ eq.codigo }}</td></tr>
+                            <tr><td class="text-muted">Regional:</td><td>{{ eq.regional }}</td></tr>
+                            <tr><td class="text-muted">Tipo:</td><td>{{ eq.tipo }}</td></tr>
+                            <tr><td class="text-muted">Fabricante:</td><td>{{ eq.fabricante or '-' }}</td></tr>
+                            <tr><td class="text-muted">Modelo:</td><td>{{ eq.modelo or '-' }}</td></tr>
+                            <tr><td class="text-muted">Nº Série:</td><td>{{ eq.numero_serie or '-' }}</td></tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-sm table-borderless">
+                            <tr><td class="text-muted">Local Instalação:</td><td style="font-size:0.85rem">{{ eq.local_instalacao or '-' }}</td></tr>
+                            <tr><td class="text-muted">ID BDIT:</td><td>{{ eq.idbdit or '-' }}</td></tr>
+                            <tr><td class="text-muted">Origem:</td><td><i class="bi {{ origem_icon.get(eq.origem, 'bi-question') }}"></i> {{ eq.origem|capitalize or '-' }}</td></tr>
+                            <tr><td class="text-muted">Status:</td>
+                                <td><span class="badge bg-{{ status_badge.get(eq.status, 'secondary') }}">{{ eq.status }}</span></td></tr>
+                            <tr><td class="text-muted">Data Cadastro:</td><td>{{ eq.data_cadastro or '-' }}</td></tr>
+                            <tr><td class="text-muted">Data Solicitação:</td><td>{{ eq.data_solicitacao or '-' }}</td></tr>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header bg-white">
+                <i class="bi bi-lightning-fill text-primary"></i> Ações Rápidas
+            </div>
+            <div class="card-body">
+                <form action="/equipamento/{{ eq.id }}/envio" method="POST" class="mb-3">
+                    <h6 class="fw-semibold"><i class="bi bi-send-fill"></i> Registrar Envio</h6>
+                    <div class="mb-2">
+                        <input type="text" class="form-control form-control-sm" name="id_envio" placeholder="ID do Envio" required>
+                    </div>
+                    <div class="mb-2">
+                        <input type="text" class="form-control form-control-sm" name="destino" placeholder="Destino (Tez&Tez, ONS...)" required>
+                    </div>
+                    <div class="mb-2">
+                        <input type="date" class="form-control form-control-sm" name="data_envio" value="{{ now().isoformat()[:10] }}">
+                    </div>
+                    <div class="mb-2">
+                        <input type="text" class="form-control form-control-sm" name="observacao" placeholder="Observação (opcional)">
+                    </div>
+                    <button type="submit" class="btn btn-success btn-sm w-100"><i class="bi bi-check-lg"></i> Registrar Envio</button>
+                </form>
+
+                <hr>
+
+                <form action="/equipamento/{{ eq.id }}/pendencia" method="POST" class="mb-3">
+                    <h6 class="fw-semibold"><i class="bi bi-exclamation-triangle-fill"></i> Registrar Pendência</h6>
+                    <div class="mb-2">
+                        <input type="text" class="form-control form-control-sm" name="motivo" placeholder="Motivo da pendência" required>
+                    </div>
+                    <div class="mb-2">
+                        <input type="text" class="form-control form-control-sm" name="origem" placeholder="Origem (opcional)">
+                    </div>
+                    <div class="mb-2">
+                        <input type="date" class="form-control form-control-sm" name="data_pendencia" value="{{ now().isoformat()[:10] }}">
+                    </div>
+                    <button type="submit" class="btn btn-warning btn-sm w-100"><i class="bi bi-exclamation"></i> Registrar Pendência</button>
+                </form>
+
+                <hr>
+
+                <form action="/equipamento/{{ eq.id }}/observacao" method="POST">
+                    <h6 class="fw-semibold"><i class="bi bi-pencil-square"></i> Adicionar Observação</h6>
+                    <div class="mb-2">
+                        <textarea class="form-control form-control-sm" name="descricao" rows="2" placeholder="Digite sua observação" required></textarea>
+                    </div>
+                    <div class="mb-2">
+                        <input type="date" class="form-control form-control-sm" name="data_ocorrencia" value="{{ now().isoformat()[:10] }}">
+                    </div>
+                    <button type="submit" class="btn btn-secondary btn-sm w-100"><i class="bi bi-plus-lg"></i> Adicionar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-white">
+                <i class="bi bi-clock-history text-primary"></i> Histórico
+            </div>
+            <div class="card-body p-0">
+                <div style="max-height:400px; overflow-y:auto">
+                    <table class="table table-sm table-axia mb-0">
+                        <thead>
+                            <tr><th>Data</th><th>Tipo</th><th>Descrição</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for h in historico %}
+                            <tr>
+                                <td>{{ h.data_ocorrencia or h.created_at[:10] }}</td>
+                                <td>
+                                    {% set tipo_badge = {
+                                        'cadastro': 'primary',
+                                        'envio': 'success',
+                                        'pendencia': 'warning',
+                                        'resolucao': 'info',
+                                        'edicao': 'secondary',
+                                        'observacao': 'light'
+                                    } %}
+                                    <span class="badge bg-{{ tipo_badge.get(h.tipo, 'secondary') }}">{{ h.tipo }}</span>
+                                </td>
+                                <td style="font-size:0.85rem">{{ h.descricao }}</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="3" class="text-center text-muted py-3">Nenhum histórico</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header bg-white">
+                <i class="bi bi-send-fill text-primary"></i> Envios
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-axia mb-0">
+                    <thead><tr><th>Data</th><th>ID</th><th>Destino</th></tr></thead>
+                    <tbody>
+                        {% for env in envios %}
+                        <tr>
+                            <td>{{ env.data_envio or env.created_at[:10] }}</td>
+                            <td>{{ env.id_envio }}</td>
+                            <td>{{ env.destino }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="3" class="text-center text-muted py-3">Nenhum envio</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-header bg-white">
+                <i class="bi bi-exclamation-triangle-fill text-primary"></i> Pendências
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-axia mb-0">
+                    <thead><tr><th>Data</th><th>Motivo</th><th>Ação</th></tr></thead>
+                    <tbody>
+                        {% for p in pendencias %}
+                        <tr class="{% if not p.resolvida %}table-warning{% endif %}">
+                            <td>{{ p.data_pendencia or '-' }}</td>
+                            <td style="font-size:0.85rem">{{ p.motivo }}</td>
+                            <td>
+                                {% if not p.resolvida %}
+                                <form action="/pendencia/{{ p.id }}/resolver" method="POST"
+                                      onsubmit="return confirm('Resolver esta pendência?')">
+                                    <button class="btn btn-sm btn-outline-success"><i class="bi bi-check2"></i></button>
+                                </form>
+                                {% else %}
+                                <span class="badge bg-info">Resolvida</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="3" class="text-center text-muted py-3">Nenhuma pendência</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

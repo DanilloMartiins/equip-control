@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-white">
+                <h5 class="mb-0 text-axia"><i class="bi bi-upload me-2"></i>Importação Inteligente</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted">
+                    O sistema identifica automaticamente as colunas da sua planilha
+                    pelos cabeçalhos — não precisa seguir uma ordem específica.
+                </p>
+
+                <div class="alert alert-info">
+                    <strong><i class="bi bi-lightbulb"></i> Funciona com:</strong>
+                    <ul class="mb-0">
+                        <li>Planilhas de Ofício (SGPMRs)</li>
+                        <li>Planilhas de Cadastro (controle_TEZ)</li>
+                        <li>Planilhas técnicas (ADR Disjuntor, TC etc)</li>
+                        <li>Planilhas individuais de SE</li>
+                    </ul>
+                </div>
+
+                <form method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Selecione a planilha</label>
+                        <input type="file" class="form-control" name="arquivo" accept=".xlsx,.xls" required>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-axia"><i class="bi bi-cloud-upload"></i> Importar</button>
+                        <a href="/" class="btn btn-outline-secondary">Cancelar</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header bg-white">
+                <i class="bi bi-question-circle text-primary"></i> Colunas que o sistema reconhece
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Campo</th>
+                                <th>Exemplos de cabeçalhos reconhecidos</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Código</td><td>TX_NUM_EQUIPAMENTO, idSAP, Equipamento SAP PM, Chave Primária</td></tr>
+                            <tr><td>Regional</td><td>Agente, Região, Regional</td></tr>
+                            <tr><td>Tipo</td><td>Entidade, Tipo de Equipamento SAP, Tipo Equipamento</td></tr>
+                            <tr><td>Fabricante</td><td>Fabricante, NOME_FABRICANTE</td></tr>
+                            <tr><td>Modelo</td><td>Modelo, Número modelo</td></tr>
+                            <tr><td>Nº Série</td><td>Número de Série, Nº série</td></tr>
+                            <tr><td>Local Instalação</td><td>Local de Instalação, LOC.INSTALAÇÃO, LOCALIZACAO</td></tr>
+                            <tr><td>ID BDIT</td><td>idBDIT, IDBDIT, Ident_Equip_Def_ONS</td></tr>
+                            <tr><td>Data Cadastro</td><td>Data de Cadastro, Data de atualização</td></tr>
+                            <tr><td>Data Solicitação</td><td>Data de Entrada em Operação, Dt.entr.serviço</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

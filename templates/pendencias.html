@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0 text-axia"><i class="bi bi-exclamation-triangle-fill me-2"></i>Pendências</h4>
+    <a href="/" class="btn btn-outline-secondary btn-sm">Voltar</a>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-7">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <i class="bi bi-exclamation-circle-fill"></i> Pendências Ativas
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-axia mb-0">
+                    <thead>
+                        <tr><th>Data</th><th>Equipamento</th><th>Regional</th><th>Motivo</th><th>Resolver</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for p in ativas %}
+                        <tr>
+                            <td>{{ p.data_pendencia or '-' }}</td>
+                            <td><a href="/equipamento/{{ p.equipamento_id }}">{{ p.eq_codigo }}</a></td>
+                            <td>{{ p.eq_regional }}</td>
+                            <td style="font-size:0.85rem">{{ p.motivo }}</td>
+                            <td>
+                                <form action="/pendencia/{{ p.id }}/resolver" method="POST"
+                                      onsubmit="return confirm('Resolver esta pendência?')">
+                                    <button class="btn btn-sm btn-outline-success"><i class="bi bi-check2"></i></button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" class="text-center text-muted py-4">Nenhuma pendência ativa! 🎉</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-5">
+        <div class="card">
+            <div class="card-header bg-white">
+                <i class="bi bi-check-circle-fill text-success"></i> Últimas Resolvidas
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-sm table-axia mb-0">
+                    <thead><tr><th>Resolução</th><th>Equipamento</th><th>Motivo</th></tr></thead>
+                    <tbody>
+                        {% for p in resolvidas %}
+                        <tr>
+                            <td>{{ p.data_resolucao or '-' }}</td>
+                            <td><a href="/equipamento/{{ p.equipamento_id }}">{{ p.eq_codigo }}</a></td>
+                            <td style="font-size:0.85rem">{{ p.motivo }}</td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="3" class="text-center text-muted py-3">Nenhuma resolvida ainda.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

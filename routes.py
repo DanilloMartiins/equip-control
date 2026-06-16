@@ -7,7 +7,8 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl import load_workbook
 
 from config import REGIONAIS
-from db import get_db, padronizar_tipo, IntegrityError
+from db import get_db, padronizar_tipo, IntegrityError, add_envio, add_pendencia, add_historico
+from matcher import identificar_colunas, mapear_para_insert
 
 bp = Blueprint('routes', __name__)
 
@@ -26,6 +27,9 @@ def index() -> str:
         SELECT tipo, COUNT(*) as qtd FROM equipamentos
         GROUP BY tipo ORDER BY qtd DESC
     """).fetchall()
+    pendentes = conn.execute("""
+        SELECT COUNT(*) AS total FROM equipamentos WHERE status = 'pendente'
+    """).fetchone()['total']
     recentes = conn.execute("""
         SELECT * FROM equipamentos ORDER BY created_at DESC LIMIT 10
     """).fetchall()
@@ -33,7 +37,7 @@ def index() -> str:
 
     return render_template('index.html',
         total=total, por_regional=por_regional, por_tipo=por_tipo,
-        recentes=recentes, regionais=REGIONAIS)
+        pendentes=pendentes, recentes=recentes, regionais=REGIONAIS)
 
 # -----------------------------------------------------------------------
 # CADASTRAR
@@ -44,6 +48,12 @@ def cadastrar() -> str:
         codigo = request.form['codigo'].strip()
         regional = request.form['regional']
         tipo = padronizar_tipo(request.form['tipo'])
+        fabricante = request.form.get('fabricante') or None
+        modelo = request.form.get('modelo') or None
+        numero_serie = request.form.get('numero_serie') or None
+        local_instalacao = request.form.get('local_instalacao') or None
+        idbdit = request.form.get('idbdit') or None
+        origem = request.form.get('origem') or 'oficio'
         data_cad = request.form.get('data_cadastro') or None
         data_sol = request.form.get('data_solicitacao') or None
 
@@ -54,8 +64,8 @@ def cadastrar() -> str:
         conn = get_db()
         try:
             conn.execute(
-                "INSERT INTO equipamentos (codigo, regional, tipo, data_cadastro, data_solicitacao) VALUES (%s, %s, %s, %s, %s)",
-                (codigo, regional, tipo, data_cad, data_sol)
+                "INSERT INTO equipamentos (codigo, regional, tipo, fabricante, modelo, numero_serie, local_instalacao, idbdit, origem, data_cadastro, data_solicitacao) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                (codigo, regional, tipo, fabricante, modelo, numero_serie, local_instalacao, idbdit, origem, data_cad, data_sol)
             )
             conn.commit()
             flash('Equipamento cadastrado com sucesso!', 'success')
@@ -373,6 +383,94 @@ def api_equipamentos():
     conn.close()
     return jsonify([dict(d) for d in dados])
 
+# -----------------------------------------------------------------------
+# IMPORT INTELIGENTE (FUZZY MATCH)
+# -----------------------------------------------------------------------
+@bp.route('/importar-smart', methods=['GET', 'POST'])
+def importar_smart() -> str:
+    if request.method == 'POST':
+        if 'arquivo' not in request.files:
+            flash('Nenhum arquivo enviado.', 'danger')
+            return redirect(url_for('routes.importar_smart'))
+
+        arquivo = request.files['arquivo']
+        if arquivo.filename == '':
+            flash('Selecione um arquivo.', 'danger')
+            return redirect(url_for('routes.importar_smart'))
+
+        try:
+            wb = load_workbook(arquivo, read_only=True, data_only=True)
+            ws = wb.active
+
+            cabecalhos = []
+            for row in ws.iter_rows(max_row=20, values_only=True):
+                vals = [str(v).strip() if v else '' for v in row]
+                vals = [v for v in vals if v]
+                if len(vals) >= 3:
+                    cabecalhos = vals
+                    break
+
+            mapping = identificar_colunas(cabecalhos)
+
+            if 'codigo' not in mapping:
+                flash('Não foi possível identificar a coluna de código do equipamento na planilha.', 'danger')
+                return redirect(url_for('routes.importar_smart'))
+
+            conn = get_db()
+            importados = 0
+            ignorados = 0
+            erros = []
+
+            for row in ws.iter_rows(min_row=2, values_only=True):
+                dados = mapear_para_insert(row, mapping, cabecalhos)
+
+                codigo = dados.get('codigo')
+                regional = dados.get('regional') or ''
+                tipo = dados.get('tipo') or ''
+
+                if not codigo or not tipo:
+                    ignorados += 1
+                    continue
+
+                regional = regional.replace('AXIA ', '').strip()
+                tipo = padronizar_tipo(tipo)
+                data_cad = dados.get('data_cadastro')
+                data_sol = dados.get('data_solicitacao')
+
+                try:
+                    conn.execute("""
+                        INSERT INTO equipamentos
+                            (codigo, regional, tipo, fabricante, modelo, numero_serie,
+                             local_instalacao, idbdit, data_cadastro, data_solicitacao)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    """, (
+                        codigo, regional, tipo,
+                        dados.get('fabricante'), dados.get('modelo'),
+                        dados.get('numero_serie'), dados.get('local_instalacao'),
+                        dados.get('idbdit'), data_cad, data_sol
+                    ))
+                    importados += 1
+                except IntegrityError:
+                    ignorados += 1
+                except Exception as e:
+                    erros.append(str(e)[:80])
+
+            conn.commit()
+            conn.close()
+            wb.close()
+
+            msg = f'Importação concluída! {importados} importados, {ignorados} ignorados.'
+            if erros:
+                msg += f' {len(erros)} erro(s).'
+            flash(msg, 'success')
+            return redirect(url_for('routes.index'))
+
+        except Exception as e:
+            flash(f'Erro ao processar planilha: {str(e)}', 'danger')
+            return redirect(url_for('routes.importar_smart'))
+
+    return render_template('importar_smart.html')
+
 @bp.route('/deletar/<int:id>', methods=['POST'])
 def deletar(id: int) -> str:
     conn = get_db()
@@ -381,3 +479,182 @@ def deletar(id: int) -> str:
     conn.close()
     flash('Equipamento removido.', 'success')
     return redirect(url_for('routes.index'))
+
+# -----------------------------------------------------------------------
+# DETALHE DO EQUIPAMENTO
+# -----------------------------------------------------------------------
+@bp.route('/equipamento/<int:id>')
+def equipamento_detalhe(id: int) -> str:
+    conn = get_db()
+    eq = conn.execute("SELECT * FROM equipamentos WHERE id = %s", (id,)).fetchone()
+    if not eq:
+        conn.close()
+        flash('Equipamento não encontrado.', 'danger')
+        return redirect(url_for('routes.index'))
+
+    historico = conn.execute(
+        "SELECT * FROM historico WHERE equipamento_id = %s ORDER BY data_ocorrencia DESC, id DESC",
+        (id,)
+    ).fetchall()
+    envios = conn.execute(
+        "SELECT * FROM envios WHERE equipamento_id = %s ORDER BY data_envio DESC, id DESC",
+        (id,)
+    ).fetchall()
+    pendencias = conn.execute(
+        "SELECT * FROM pendencias WHERE equipamento_id = %s ORDER BY data_pendencia DESC, id DESC",
+        (id,)
+    ).fetchall()
+    conn.close()
+
+    return render_template('equipamento.html',
+        eq=eq, historico=historico, envios=envios, pendencias=pendencias)
+
+# -----------------------------------------------------------------------
+# EDITAR EQUIPAMENTO
+# -----------------------------------------------------------------------
+@bp.route('/equipamento/<int:id>/editar', methods=['GET', 'POST'])
+def equipamento_editar(id: int) -> str:
+    conn = get_db()
+    if request.method == 'POST':
+        dados = {k: request.form.get(k) or None for k in [
+            'codigo', 'regional', 'tipo', 'fabricante', 'modelo',
+            'numero_serie', 'local_instalacao', 'idbdit', 'origem',
+            'status', 'data_cadastro', 'data_solicitacao'
+        ]}
+        dados['tipo'] = padronizar_tipo(dados['tipo'])
+        conn.execute("""
+            UPDATE equipamentos SET
+                codigo=%s, regional=%s, tipo=%s, fabricante=%s, modelo=%s,
+                numero_serie=%s, local_instalacao=%s, idbdit=%s, origem=%s,
+                status=%s, data_cadastro=%s, data_solicitacao=%s
+            WHERE id=%s
+        """, (*dados.values(), id))
+        add_historico(conn, id, 'edicao', 'Equipamento editado')
+        conn.commit()
+        conn.close()
+        flash('Equipamento atualizado!', 'success')
+        return redirect(url_for('routes.equipamento_detalhe', id=id))
+
+    eq = conn.execute("SELECT * FROM equipamentos WHERE id = %s", (id,)).fetchone()
+    conn.close()
+    if not eq:
+        flash('Equipamento não encontrado.', 'danger')
+        return redirect(url_for('routes.index'))
+    return render_template('editar.html', eq=eq, regionais=REGIONAIS)
+
+# -----------------------------------------------------------------------
+# ADICIONAR ENVIO
+# -----------------------------------------------------------------------
+@bp.route('/equipamento/<int:id>/envio', methods=['POST'])
+def equipamento_envio(id: int) -> str:
+    id_envio = request.form['id_envio'].strip()
+    destino = request.form['destino'].strip()
+    data_envio = request.form.get('data_envio') or None
+    observacao = request.form.get('observacao') or None
+
+    if not id_envio or not destino:
+        flash('Preencha ID do envio e destino.', 'danger')
+        return redirect(url_for('routes.equipamento_detalhe', id=id))
+
+    conn = get_db()
+    add_envio(conn, id, id_envio, destino, data_envio, observacao)
+    conn.execute("UPDATE equipamentos SET status = 'enviado' WHERE id = %s", (id,))
+    conn.commit()
+    conn.close()
+    flash('Envio registrado!', 'success')
+    return redirect(url_for('routes.equipamento_detalhe', id=id))
+
+# -----------------------------------------------------------------------
+# ADICIONAR PENDENCIA
+# -----------------------------------------------------------------------
+@bp.route('/equipamento/<int:id>/pendencia', methods=['POST'])
+def equipamento_pendencia(id: int) -> str:
+    motivo = request.form['motivo'].strip()
+    origem = request.form.get('origem') or None
+    data_pendencia = request.form.get('data_pendencia') or None
+
+    if not motivo:
+        flash('Descreva o motivo da pendência.', 'danger')
+        return redirect(url_for('routes.equipamento_detalhe', id=id))
+
+    conn = get_db()
+    add_pendencia(conn, id, motivo, origem, data_pendencia)
+    conn.execute("UPDATE equipamentos SET status = 'pendente' WHERE id = %s", (id,))
+    conn.commit()
+    conn.close()
+    flash('Pendência registrada!', 'success')
+    return redirect(url_for('routes.equipamento_detalhe', id=id))
+
+# -----------------------------------------------------------------------
+# RESOLVER PENDENCIA
+# -----------------------------------------------------------------------
+@bp.route('/pendencia/<int:id>/resolver', methods=['POST'])
+def pendencia_resolver(id: int) -> str:
+    conn = get_db()
+    cur = conn.execute("SELECT equipamento_id FROM pendencias WHERE id = %s", (id,))
+    pend = cur.fetchone()
+    if pend:
+        from db import resolve_pendencia
+        resolve_pendencia(conn, id)
+        conn.commit()
+        flash('Pendência resolvida!', 'success')
+        conn.close()
+        return redirect(url_for('routes.equipamento_detalhe', id=pend['equipamento_id']))
+    conn.close()
+    flash('Pendência não encontrada.', 'danger')
+    return redirect(url_for('routes.index'))
+
+# -----------------------------------------------------------------------
+# ADICIONAR OBSERVACAO NO HISTORICO
+# -----------------------------------------------------------------------
+@bp.route('/equipamento/<int:id>/observacao', methods=['POST'])
+def equipamento_observacao(id: int) -> str:
+    descricao = request.form['descricao'].strip()
+    data_ocorrencia = request.form.get('data_ocorrencia') or None
+    if not descricao:
+        flash('Escreva uma observação.', 'danger')
+        return redirect(url_for('routes.equipamento_detalhe', id=id))
+    conn = get_db()
+    add_historico(conn, id, 'observacao', descricao, data_ocorrencia)
+    conn.commit()
+    conn.close()
+    flash('Observação adicionada!', 'success')
+    return redirect(url_for('routes.equipamento_detalhe', id=id))
+
+# -----------------------------------------------------------------------
+# LISTAR ENVIOS
+# -----------------------------------------------------------------------
+@bp.route('/envios')
+def listar_envios() -> str:
+    conn = get_db()
+    envios = conn.execute("""
+        SELECT e.*, eq.codigo as eq_codigo, eq.regional as eq_regional, eq.tipo as eq_tipo
+        FROM envios e
+        JOIN equipamentos eq ON eq.id = e.equipamento_id
+        ORDER BY e.created_at DESC LIMIT 100
+    """).fetchall()
+    conn.close()
+    return render_template('envios.html', envios=envios)
+
+# -----------------------------------------------------------------------
+# LISTAR PENDENCIAS
+# -----------------------------------------------------------------------
+@bp.route('/pendencias')
+def listar_pendencias() -> str:
+    conn = get_db()
+    ativas = conn.execute("""
+        SELECT p.*, eq.codigo as eq_codigo, eq.regional as eq_regional, eq.tipo as eq_tipo
+        FROM pendencias p
+        JOIN equipamentos eq ON eq.id = p.equipamento_id
+        WHERE p.resolvida = 0
+        ORDER BY p.data_pendencia DESC
+    """).fetchall()
+    resolvidas = conn.execute("""
+        SELECT p.*, eq.codigo as eq_codigo, eq.regional as eq_regional, eq.tipo as eq_tipo
+        FROM pendencias p
+        JOIN equipamentos eq ON eq.id = p.equipamento_id
+        WHERE p.resolvida = 1
+        ORDER BY p.data_resolucao DESC LIMIT 50
+    """).fetchall()
+    conn.close()
+    return render_template('pendencias.html', ativas=ativas, resolvidas=resolvidas)
