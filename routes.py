@@ -421,6 +421,9 @@ def importar_smart() -> str:
             ignorados = 0
             erros = []
 
+            colunas_db = ['regional', 'tipo', 'fabricante', 'modelo', 'numero_serie',
+                          'local_instalacao', 'idbdit', 'data_cadastro', 'data_solicitacao']
+
             for row in ws.iter_rows(min_row=2, values_only=True):
                 dados = mapear_para_insert(row, mapping, cabecalhos)
 
@@ -432,24 +435,47 @@ def importar_smart() -> str:
                     ignorados += 1
                     continue
 
-                regional = regional.replace('AXIA ', '').strip()
+                regional = regional.split('|', 1)[-1].strip() if '|' in regional else regional.strip()
                 tipo = padronizar_tipo(tipo)
                 data_cad = dados.get('data_cadastro')
                 data_sol = dados.get('data_solicitacao')
 
                 try:
-                    conn.execute("""
-                        INSERT INTO equipamentos
-                            (codigo, regional, tipo, fabricante, modelo, numero_serie,
-                             local_instalacao, idbdit, data_cadastro, data_solicitacao)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                    """, (
-                        codigo, regional, tipo,
-                        dados.get('fabricante'), dados.get('modelo'),
-                        dados.get('numero_serie'), dados.get('local_instalacao'),
-                        dados.get('idbdit'), data_cad, data_sol
-                    ))
-                    importados += 1
+                    cur = conn.execute(
+                        "SELECT id, status FROM equipamentos WHERE codigo = %s", (codigo,)
+                    )
+                    existente = cur.fetchone()
+
+                    if existente:
+                        sets = []
+                        params = []
+                        for col in colunas_db:
+                            val = dados.get(col)
+                            if val:
+                                sets.append(f"{col} = %s")
+                                params.append(val)
+                        if existente['status'] == 'pendente':
+                            sets.append("status = 'concluido'")
+                        if sets:
+                            params.append(codigo)
+                            conn.execute(
+                                f"UPDATE equipamentos SET {', '.join(sets)} WHERE codigo = %s",
+                                params
+                            )
+                        importados += 1
+                    else:
+                        conn.execute("""
+                            INSERT INTO equipamentos
+                                (codigo, regional, tipo, fabricante, modelo, numero_serie,
+                                 local_instalacao, idbdit, data_cadastro, data_solicitacao)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                        """, (
+                            codigo, regional, tipo,
+                            dados.get('fabricante'), dados.get('modelo'),
+                            dados.get('numero_serie'), dados.get('local_instalacao'),
+                            dados.get('idbdit'), data_cad, data_sol
+                        ))
+                        importados += 1
                 except IntegrityError:
                     ignorados += 1
                 except Exception as e:

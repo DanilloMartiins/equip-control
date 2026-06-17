@@ -8,15 +8,20 @@ SINONIMOS = {
         'Num_Operacional', 'N�mero SGPMR',
         'C�digo SAP PM Eq.', 'codigo',
         'EQUIPAMENTOS_PM',
+        'Id Do Ativo', 'IdDoAtivo', 'id_do_ativo',
     ],
     'regional': [
         'Agente', 'Região', 'Regional', 'REGIAO', 'Regi�o',
+        'Nome Empresa', 'Nome_Empresa', 'nome_empresa',
     ],
     'tipo': [
         'Entidade', 'Tipo de Equipamento SAP', 'Tipo Equipamento',
         'TIPO_EQUIPAMENTO_DO_SAP', 'Tipo de Equipamento BQ',
         'TIPO_EQUIPAMENTO', 'TipoCorrente', 'Tipo_Corrente',
         'Tipo de Equipamento SGBDIT', 'TIPO_EQUIPAMENTO_DO_SGBDIT',
+    ],
+    'modalidade': [
+        'Modalidade', 'modalidade',
     ],
     'fabricante': [
         'Fabricante', 'NOME_FABRICANTE', 'Fabricante_Tipo',
@@ -40,10 +45,17 @@ SINONIMOS = {
         'idbdit', 'IDBDIT', 'IdBDIT', 'Ident_Equip_Def_ONS',
         'IdBDITSubestacao',
     ],
+    'lt_ou_se': [
+        'Lt Ou Se', 'LT/SE', 'lt_ou_se', 'LtOuSe',
+    ],
+    'preenchimento': [
+        'Preenchimento', 'preenchimento',
+    ],
     'data_cadastro': [
         'Data de Cadastro', 'Data de cadastro', 'Data_cadastro',
         'Data de atualização', 'Data de atualiza��o', 'DATA_ATUALIZACAO',
         'Data de Entrada em Opera��o', 'DataEntradaOperacaoComercial',
+        'Data',
     ],
     'data_solicitacao': [
         'Data de Solicitação de Envio', 'Data Sol. ATVAPT',
@@ -69,6 +81,9 @@ CAMPO_PADRAO = {
     'numero_serie': 'numero_serie',
     'local_instalacao': 'local_instalacao',
     'idbdit': 'idbdit',
+    'modalidade': 'modalidade',
+    'lt_ou_se': 'lt_ou_se',
+    'preenchimento': 'preenchimento',
     'data_cadastro': 'data_cadastro',
     'data_solicitacao': 'data_solicitacao',
     'status': 'status',
