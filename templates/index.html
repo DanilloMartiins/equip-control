@@ -25,20 +25,24 @@
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card stat-card border-start border-info border-4">
-            <div class="card-body text-center">
-                <h3 class="display-4 fw-bold text-info mb-0">{{ por_tipo|length }}</h3>
-                <p class="text-muted mb-0">Tipos</p>
+        <a href="/equipamentos?status=pendente" class="text-decoration-none">
+            <div class="card stat-card border-start border-warning border-4 card-hover">
+                <div class="card-body text-center">
+                    <h3 class="display-4 fw-bold text-warning mb-0">{{ pendentes }}</h3>
+                    <p class="text-muted mb-0">Pendentes</p>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
     <div class="col-md-3">
-        <div class="card stat-card border-start border-warning border-4">
-            <div class="card-body text-center">
-                <h3 class="display-4 fw-bold text-warning mb-0">{{ pendentes }}</h3>
-                <p class="text-muted mb-0">Pendentes</p>
+        <a href="/equipamentos?status=concluido" class="text-decoration-none">
+            <div class="card stat-card border-start border-info border-4 card-hover">
+                <div class="card-body text-center">
+                    <h3 class="display-4 fw-bold text-info mb-0">{{ concluidos }}</h3>
+                    <p class="text-muted mb-0">Concluídos</p>
+                </div>
             </div>
-        </div>
+        </a>
     </div>
 </div>
 

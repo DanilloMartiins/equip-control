@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h4 class="mb-0 text-axia">
+            <i class="bi bi-list-ul me-2"></i>
+            {% if status_filtro == 'pendente' %}
+                Equipamentos Pendentes
+            {% elif status_filtro == 'concluido' %}
+                Equipamentos Concluídos
+            {% else %}
+                Todos os Equipamentos
+            {% endif %}
+        </h4>
+        <small class="text-muted">{{ total_filtro }} equipamento(s)</small>
+    </div>
+    <div>
+        <a href="/" class="btn btn-sm btn-outline-secondary me-1"><i class="bi bi-house"></i> Home</a>
+        <a href="/exportar" class="btn btn-sm btn-axia"><i class="bi bi-download"></i> Excel</a>
+    </div>
+</div>
+
+<form method="GET" action="/equipamentos" class="row g-2 mb-3">
+    <div class="col-md-5">
+        <input type="text" class="form-control" name="q" placeholder="Buscar por nº do equipamento..." value="{{ busca or '' }}">
+    </div>
+    <div class="col-md-3">
+        <select class="form-select" name="status">
+            <option value="">Todos os status</option>
+            <option value="pendente" {{ 'selected' if status_filtro == 'pendente' }}>Pendentes</option>
+            <option value="concluido" {{ 'selected' if status_filtro == 'concluido' }}>Concluídos</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-axia w-100"><i class="bi bi-search"></i> Filtrar</button>
+    </div>
+    <div class="col-md-2">
+        <a href="/equipamentos" class="btn btn-outline-secondary w-100"><i class="bi bi-x-lg"></i> Limpar</a>
+    </div>
+</form>
+
+<div class="row g-2 mb-3">
+    <div class="col-md-3">
+        <div class="card stat-card border-start border-primary border-4">
+            <div class="card-body text-center py-2">
+                <span class="fs-3 fw-bold text-primary">{{ total }}</span>
+                <small class="d-block text-muted">Total Geral</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card border-start border-success border-4">
+            <div class="card-body text-center py-2">
+                <span class="fs-3 fw-bold text-success">{{ por_regional|length }}</span>
+                <small class="d-block text-muted">Regionais</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card border-start border-info border-4">
+            <div class="card-body text-center py-2">
+                <span class="fs-3 fw-bold text-info">{{ por_tipo|length }}</span>
+                <small class="d-block text-muted">Tipos</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card border-start border-secondary border-4">
+            <div class="card-body text-center py-2">
+                <span class="fs-3 fw-bold text-secondary">{{ total_filtro }}</span>
+                <small class="d-block text-muted">
+                    {% if status_filtro == 'pendente' %}Pendentes
+                    {% elif status_filtro == 'concluido' %}Concluídos
+                    {% else %}Exibidos{% endif %}
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header bg-white fw-semibold d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-table me-2 text-primary"></i>Equipamentos</span>
+        {% if status_filtro or busca %}
+        <a href="/equipamentos" class="btn btn-sm btn-outline-secondary">Limpar filtro</a>
+        {% endif %}
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-axia mb-0">
+                <thead>
+                    <tr>
+                        <th>Código</th>
+                        <th>Regional</th>
+                        <th>Tipo</th>
+                        <th>Status</th>
+                        <th>Data Cadastro</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set status_badge = {
+                        'pendente': 'warning',
+                        'enviado': 'success',
+                        'cadastrado': 'info',
+                        'concluido': 'primary'
+                    } %}
+                    {% for eq in equipamentos %}
+                    <tr>
+                        <td><a href="/equipamento/{{ eq.id }}">{{ eq.codigo }}</a></td>
+                        <td>{{ eq.regional }}</td>
+                        <td>{{ eq.tipo }}</td>
+                        <td><span class="badge bg-{{ status_badge.get(eq.status, 'secondary') }}">{{ eq.status or 'pendente' }}</span></td>
+                        <td>{{ eq.data_cadastro or '-' }}</td>
+                        <td>
+                            <a href="/equipamento/{{ eq.id }}" class="btn btn-sm btn-outline-primary" title="Detalhes"><i class="bi bi-eye"></i></a>
+                            <form action="/deletar/{{ eq.id }}" method="POST" style="display:inline"
+                                  onsubmit="return confirm('Remover equipamento {{ eq.codigo }}?')">
+                                <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="text-center text-muted py-4">Nenhum equipamento encontrado.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-white fw-semibold">
+                <i class="bi bi-geo-alt-fill text-primary me-2"></i>Resumo por Regional
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-axia mb-0">
+                    <thead><tr><th>Regional</th><th class="text-center">Quantidade</th></tr></thead>
+                    <tbody>
+                        {% for r in por_regional %}
+                        <tr>
+                            <td><strong>{{ r.regional }}</strong></td>
+                            <td class="text-center">{{ r.qtd }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header bg-white fw-semibold">
+                <i class="bi bi-boxes text-primary me-2"></i>Resumo por Tipo
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-axia mb-0">
+                    <thead><tr><th>Tipo</th><th class="text-center">Quantidade</th></tr></thead>
+                    <tbody>
+                        {% for t in por_tipo %}
+                        <tr>
+                            <td>{{ t.tipo }}</td>
+                            <td class="text-center">{{ t.qtd }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
