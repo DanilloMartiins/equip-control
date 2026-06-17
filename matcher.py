@@ -1,24 +1,25 @@
 from thefuzz import fuzz
 
 SINONIMOS = {
-    'codigo': [
-        'TX_NUM_EQUIPAMENTO', 'Chave Primária', 'Código SAP PM Eq.',
-        'Equipamento SAP PM', 'idSAP', 'Código', 'CodigoAtivoConcessionaria',
-        'NUMERO_SGPMR', 'Número SGPMR', 'Equipamento', 'NumeroOperacional',
-        'Num_Operacional', 'N�mero SGPMR',
-        'C�digo SAP PM Eq.', 'codigo',
-        'EQUIPAMENTOS_PM',
-        'Id Do Ativo', 'IdDoAtivo', 'id_do_ativo',
-    ],
-    'regional': [
-        'Agente', 'Região', 'Regional', 'REGIAO', 'Regi�o',
-        'Nome Empresa', 'Nome_Empresa', 'nome_empresa',
-    ],
     'tipo': [
         'Entidade', 'Tipo de Equipamento SAP', 'Tipo Equipamento',
         'TIPO_EQUIPAMENTO_DO_SAP', 'Tipo de Equipamento BQ',
         'TIPO_EQUIPAMENTO', 'TipoCorrente', 'Tipo_Corrente',
         'Tipo de Equipamento SGBDIT', 'TIPO_EQUIPAMENTO_DO_SGBDIT',
+    ],
+    'codigo': [
+        'TX_NUM_EQUIPAMENTO', 'Chave Primária', 'Código SAP PM Eq.',
+        'Equipamento SAP PM', 'idSAP', 'Código', 'CodigoAtivoConcessionaria',
+        'NUMERO_SGPMR', 'Número SGPMR', 'NumeroOperacional',
+        'Num_Operacional', 'N�mero SGPMR',
+        'C�digo SAP PM Eq.', 'codigo',
+        'EQUIPAMENTOS_PM',
+        'Id Do Ativo', 'IdDoAtivo', 'id_do_ativo',
+        'Eq. SAP PM', 'Eq. SAP PM',
+    ],
+    'regional': [
+        'Agente', 'Região', 'Regional', 'REGIAO', 'Regi�o',
+        'Nome Empresa', 'Nome_Empresa', 'nome_empresa',
     ],
     'modalidade': [
         'Modalidade', 'modalidade',
@@ -68,7 +69,7 @@ SINONIMOS = {
         'Status_Usuario', 'Status_Sistema',
     ],
     'sgpmr': [
-        'NUMERO_SGPMR', 'Número SGPMR', 'N�mero SGPMR',
+        'NUMERO_SGPMR', 'Número SGPMR', 'N�mero SGPMR', 'SGPMR',
     ],
 }
 
