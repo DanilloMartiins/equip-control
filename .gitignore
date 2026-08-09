@@ -17,3 +17,5 @@ Thumbs.db
 dist/
 build/
 *.db
+.vercel
+.env*

@@ -94,7 +94,7 @@
                         <th>Regional</th>
                         <th>Tipo</th>
                         <th>Status</th>
-                        <th>Data Cadastro</th>
+                        <th>Data Entrada em Operacao</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
@@ -111,7 +111,7 @@
                         <td>{{ eq.regional }}</td>
                         <td>{{ eq.tipo }}</td>
                         <td><span class="badge bg-{{ status_badge.get(eq.status, 'secondary') }}">{{ eq.status or 'pendente' }}</span></td>
-                        <td>{{ eq.data_cadastro or '-' }}</td>
+                        <td>{{ eq.data_entrada_operacao or eq.data_cadastro or '-' }}</td>
                         <td>
                             <a href="/equipamento/{{ eq.id }}" class="btn btn-sm btn-outline-primary" title="Detalhes"><i class="bi bi-eye"></i></a>
                             <form action="/deletar/{{ eq.id }}" method="POST" style="display:inline"

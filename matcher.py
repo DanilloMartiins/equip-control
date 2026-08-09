@@ -52,7 +52,7 @@ SINONIMOS = {
     'preenchimento': [
         'Preenchimento', 'preenchimento',
     ],
-    'data_cadastro': [
+    'data_entrada_operacao': [
         'Data de Cadastro', 'Data de cadastro', 'Data_cadastro',
         'Data de atualização', 'Data de atualiza��o', 'DATA_ATUALIZACAO',
         'Data de Entrada em Opera��o', 'DataEntradaOperacaoComercial',
@@ -85,7 +85,7 @@ CAMPO_PADRAO = {
     'modalidade': 'modalidade',
     'lt_ou_se': 'lt_ou_se',
     'preenchimento': 'preenchimento',
-    'data_cadastro': 'data_cadastro',
+    'data_entrada_operacao': 'data_entrada_operacao',
     'data_solicitacao': 'data_solicitacao',
     'status': 'status',
 }

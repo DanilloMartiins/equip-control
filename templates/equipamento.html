@@ -46,6 +46,7 @@
                             <tr><td class="text-muted">Origem:</td><td><i class="bi {{ origem_icon.get(eq.origem, 'bi-question') }}"></i> {{ eq.origem|capitalize or '-' }}</td></tr>
                             <tr><td class="text-muted">Status:</td>
                                 <td><span class="badge bg-{{ status_badge.get(eq.status, 'secondary') }}">{{ eq.status }}</span></td></tr>
+                            <tr><td class="text-muted">Data Entrada em Operacao:</td><td>{{ eq.data_entrada_operacao or '-' }}</td></tr>
                             <tr><td class="text-muted">Data Cadastro:</td><td>{{ eq.data_cadastro or '-' }}</td></tr>
                             <tr><td class="text-muted">Data Solicitação:</td><td>{{ eq.data_solicitacao or '-' }}</td></tr>
                         </table>

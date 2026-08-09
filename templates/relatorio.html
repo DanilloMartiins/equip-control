@@ -44,7 +44,7 @@
                         <th>Nº Equipamento</th>
                         <th>Regional</th>
                         <th>Tipo</th>
-                        <th>Data Cadastro</th>
+                        <th>Data Entrada em Operacao</th>
                         <th>Data Solicitação</th>
                     </tr>
                 </thead>
@@ -54,7 +54,7 @@
                         <td>{{ eq.codigo }}</td>
                         <td>{{ eq.regional }}</td>
                         <td>{{ eq.tipo }}</td>
-                        <td>{{ eq.data_cadastro or '-' }}</td>
+                        <td>{{ eq.data_entrada_operacao or eq.data_cadastro or '-' }}</td>
                         <td>{{ eq.data_solicitacao or '-' }}</td>
                     </tr>
                     {% else %}

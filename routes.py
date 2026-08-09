@@ -57,7 +57,8 @@ def cadastrar() -> str:
         local_instalacao = request.form.get('local_instalacao') or None
         idbdit = request.form.get('idbdit') or None
         origem = request.form.get('origem') or 'oficio'
-        data_cad = request.form.get('data_cadastro') or None
+        data_cad = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        data_entrada = request.form.get('data_entrada_operacao') or None
         data_sol = request.form.get('data_solicitacao') or None
 
         if not codigo or not regional or not tipo:
@@ -67,8 +68,8 @@ def cadastrar() -> str:
         conn = get_db()
         try:
             conn.execute(
-                "INSERT INTO equipamentos (codigo, regional, tipo, fabricante, modelo, numero_serie, local_instalacao, idbdit, origem, data_cadastro, data_solicitacao) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
-                (codigo, regional, tipo, fabricante, modelo, numero_serie, local_instalacao, idbdit, origem, data_cad, data_sol)
+                "INSERT INTO equipamentos (codigo, regional, tipo, fabricante, modelo, numero_serie, local_instalacao, idbdit, origem, data_cadastro, data_entrada_operacao, data_solicitacao) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+                (codigo, regional, tipo, fabricante, modelo, numero_serie, local_instalacao, idbdit, origem, data_cad, data_entrada, data_sol)
             )
             conn.commit()
             flash('Equipamento cadastrado com sucesso!', 'success')
@@ -118,13 +119,13 @@ def importar() -> str:
                 regional = raw_regional
                 tipo = padronizar_tipo(raw_tipo)
 
-                data_cad = str(raw_cad)[:10] if raw_cad else None
+                data_entrada = str(raw_cad)[:10] if raw_cad else None
                 data_env = str(raw_env)[:10] if raw_env else None
 
                 try:
                     conn.execute(
-                        "INSERT INTO equipamentos (codigo, regional, tipo, data_cadastro, data_solicitacao) VALUES (%s, %s, %s, %s, %s)",
-                        (codigo, regional, tipo, data_cad, data_env)
+                        "INSERT INTO equipamentos (codigo, regional, tipo, data_entrada_operacao, data_solicitacao) VALUES (%s, %s, %s, %s, %s)",
+                        (codigo, regional, tipo, data_entrada, data_env)
                     )
                     importados += 1
                 except IntegrityError:
@@ -166,7 +167,7 @@ def relatorio() -> str:
 def exportar():
     conn = get_db()
     dados = conn.execute("""
-        SELECT codigo, regional, tipo, data_cadastro, data_solicitacao
+        SELECT codigo, regional, tipo, data_entrada_operacao, data_solicitacao
         FROM equipamentos ORDER BY regional, tipo, codigo
     """).fetchall()
     por_regional = conn.execute("""
@@ -266,7 +267,7 @@ def exportar():
     for i, d in enumerate(dados):
         r = h_row + 1 + i
         fill = fill_l1 if i % 2 == 0 else fill_l2
-        vals = [d['codigo'], d['regional'], d['tipo'], d['data_cadastro'], d['data_solicitacao']]
+        vals = [d['codigo'], d['regional'], d['tipo'], d['data_entrada_operacao'], d['data_solicitacao']]
         for col_idx, val in enumerate(vals, 1):
             c = ws.cell(row=r, column=col_idx, value=val)
             c.font = Font(name="Calibri", size=10, color="333333")
@@ -469,7 +470,7 @@ def importar_smart() -> str:
             erros = []
 
             colunas_db = ['regional', 'tipo', 'fabricante', 'modelo', 'numero_serie',
-                          'local_instalacao', 'idbdit', 'data_cadastro', 'data_solicitacao']
+                          'local_instalacao', 'idbdit', 'data_entrada_operacao', 'data_solicitacao']
 
             for row in ws.iter_rows(min_row=2, values_only=True):
                 dados = mapear_para_insert(row, mapping, cabecalhos)
@@ -484,7 +485,7 @@ def importar_smart() -> str:
 
                 regional = regional.split('|', 1)[-1].strip() if '|' in regional else regional.strip()
                 tipo = padronizar_tipo(tipo)
-                data_cad = dados.get('data_cadastro')
+                data_entrada = dados.get('data_entrada_operacao') or dados.get('data_cadastro')
                 data_sol = dados.get('data_solicitacao')
 
                 try:
@@ -514,13 +515,13 @@ def importar_smart() -> str:
                         conn.execute("""
                             INSERT INTO equipamentos
                                 (codigo, regional, tipo, fabricante, modelo, numero_serie,
-                                 local_instalacao, idbdit, data_cadastro, data_solicitacao)
+                                 local_instalacao, idbdit, data_entrada_operacao, data_solicitacao)
                             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                         """, (
                             codigo, regional, tipo,
                             dados.get('fabricante'), dados.get('modelo'),
                             dados.get('numero_serie'), dados.get('local_instalacao'),
-                            dados.get('idbdit'), data_cad, data_sol
+                            dados.get('idbdit'), data_entrada, data_sol
                         ))
                         importados += 1
                 except IntegrityError:
@@ -592,14 +593,15 @@ def equipamento_editar(id: int) -> str:
         dados = {k: request.form.get(k) or None for k in [
             'codigo', 'regional', 'tipo', 'fabricante', 'modelo',
             'numero_serie', 'local_instalacao', 'idbdit', 'origem',
-            'status', 'data_cadastro', 'data_solicitacao'
+            'status', 'data_entrada_operacao', 'data_solicitacao'
         ]}
         dados['tipo'] = padronizar_tipo(dados['tipo'])
+        dados['data_cadastro'] = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         conn.execute("""
             UPDATE equipamentos SET
                 codigo=%s, regional=%s, tipo=%s, fabricante=%s, modelo=%s,
                 numero_serie=%s, local_instalacao=%s, idbdit=%s, origem=%s,
-                status=%s, data_cadastro=%s, data_solicitacao=%s
+                status=%s, data_entrada_operacao=%s, data_cadastro=%s, data_solicitacao=%s
             WHERE id=%s
         """, (*dados.values(), id))
         add_historico(conn, id, 'edicao', 'Equipamento editado')

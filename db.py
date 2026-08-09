@@ -84,6 +84,7 @@ def init_db():
                 origem TEXT DEFAULT 'oficio',
                 status TEXT DEFAULT 'pendente',
                 data_cadastro TEXT,
+                data_entrada_operacao TEXT,
                 data_solicitacao TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -136,6 +137,7 @@ def init_db():
                 origem TEXT DEFAULT 'oficio',
                 status TEXT DEFAULT 'pendente',
                 data_cadastro TEXT,
+                data_entrada_operacao TEXT,
                 data_solicitacao TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
@@ -175,11 +177,11 @@ def init_db():
             )
         """)
 
+    _migrate_equipamentos(conn)
     conn.commit()
     conn.close()
 
-def _migrate_equipamentos():
-    conn = get_db()
+def _migrate_equipamentos(conn):
     colunas = [
         ("fabricante", "TEXT"),
         ("modelo", "TEXT"),
@@ -188,6 +190,7 @@ def _migrate_equipamentos():
         ("idbdit", "TEXT"),
         ("origem", "TEXT DEFAULT 'oficio'"),
         ("status", "TEXT DEFAULT 'pendente'"),
+        ("data_entrada_operacao", "TEXT"),
     ]
     for nome, tipo in colunas:
         try:
@@ -199,10 +202,110 @@ def _migrate_equipamentos():
         except Exception:
             conn.rollback()
             pass
-    conn.close()
 
-# roda migração no import
-_migrate_equipamentos()
+    _normalizar_regionais(conn)
+    _migrar_data_cadastro(conn)
+
+
+def _normalizar_regionais(conn):
+    mapeamento = {
+        'AXIA NORDESTE': 'AXIA Nordeste',
+        'AXIA Nordeste': 'AXIA Nordeste',
+        'NORDESTE': 'AXIA Nordeste',
+        'Nordeste': 'AXIA Nordeste',
+        'nordeste': 'AXIA Nordeste',
+        'AXIA SUDESTE': 'AXIA Sudeste',
+        'AXIA Sudeste': 'AXIA Sudeste',
+        'SUDESTE': 'AXIA Sudeste',
+        'Sudeste': 'AXIA Sudeste',
+        'sudeste': 'AXIA Sudeste',
+        'AXIA SUL': 'AXIA Sul',
+        'AXIA Sul': 'AXIA Sul',
+        'SUL': 'AXIA Sul',
+        'Sul': 'AXIA Sul',
+        'sul': 'AXIA Sul',
+        'AXIA NORTE': 'AXIA Norte',
+        'AXIA Norte': 'AXIA Norte',
+        'NORTE': 'AXIA Norte',
+        'Norte': 'AXIA Norte',
+        'norte': 'AXIA Norte',
+    }
+
+    try:
+        rows = conn.execute("SELECT DISTINCT regional FROM equipamentos").fetchall()
+    except Exception:
+        return
+
+    for row in rows:
+        regional = row['regional'] if isinstance(row, dict) else row[0]
+        if not regional:
+            continue
+
+        limpa = regional.split('|', 1)[-1].strip() if '|' in regional else regional.strip()
+
+        if limpa in mapeamento:
+            destino = mapeamento[limpa]
+        else:
+            limpa_lower = limpa.lower()
+            destino = None
+            for chave, val in mapeamento.items():
+                if chave.lower() == limpa_lower:
+                    destino = val
+                    break
+            if not destino:
+                continue
+
+        if regional != destino:
+            try:
+                conn.execute(
+                    "UPDATE equipamentos SET regional = %s WHERE regional = %s",
+                    (destino, regional)
+                )
+                conn.commit()
+            except Exception:
+                conn.rollback()
+
+
+def _migrar_data_cadastro(conn):
+    try:
+        colunas = [row[1] if isinstance(row, tuple) else row['column_name']
+                   for row in conn.execute(
+                       "SELECT column_name FROM information_schema.columns "
+                       "WHERE table_name = 'equipamentos'"
+                   ).fetchall()]
+    except Exception:
+        try:
+            pragma = conn.execute("PRAGMA table_info(equipamentos)").fetchall()
+            colunas = [row[1] if isinstance(row, tuple) else row['name'] for row in pragma]
+        except Exception:
+            return
+
+    if 'data_entrada_operacao' not in colunas:
+        return
+
+    try:
+        tem_dados = conn.execute(
+            "SELECT COUNT(*) AS total FROM equipamentos "
+            "WHERE data_cadastro IS NOT NULL AND data_cadastro != ''"
+        ).fetchone()
+        total = tem_dados['total'] if isinstance(tem_dados, dict) else tem_dados[0]
+        if total and total > 0:
+            conn.execute(
+                "UPDATE equipamentos SET data_entrada_operacao = data_cadastro, data_cadastro = NULL "
+                "WHERE data_entrada_operacao IS NULL OR data_entrada_operacao = ''"
+            )
+            conn.commit()
+    except Exception:
+        conn.rollback()
+
+    try:
+        conn.execute(
+            "UPDATE equipamentos SET regional = %s WHERE regional IS NULL OR TRIM(regional) = ''",
+            ('AXIA Nordeste',)
+        )
+        conn.commit()
+    except Exception:
+        conn.rollback()
 
 # -----------------------------------------------------------------------
 # Helpers
