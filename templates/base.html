@@ -45,13 +45,15 @@
                     <li class="nav-item"><a class="nav-link" href="/exportar"><i class="bi bi-download"></i> Exportar Excel</a></li>
                     <li class="nav-item"><a class="nav-link" href="/envios"><i class="bi bi-send-fill"></i> Envios</a></li>
                     <li class="nav-item"><a class="nav-link" href="/pendencias"><i class="bi bi-exclamation-triangle-fill"></i> Pendências</a></li>
-                    <li class="nav-item d-flex align-items-center me-2">
-                        <a class="nav-link d-flex align-items-center" href="/perfil">
-                            <img id="navFoto" alt="foto" class="rounded-circle me-2" style="width:28px;height:28px;object-fit:cover;display:none;">
-                            <span id="navNome">{{ usuario or '' }}</span>
-                        </a>
+                    <li class="nav-item d-flex align-items-center">
+                        <div class="d-flex align-items-center gap-2 rounded-pill px-2 py-1" style="background:rgba(255,255,255,0.15);">
+                            <a class="nav-link d-flex align-items-center px-1" href="/perfil" style="color:#fff;">
+                                <img id="navFoto" alt="foto" class="rounded-circle me-2" style="width:28px;height:28px;object-fit:cover;display:none;">
+                                <span id="navNome" style="line-height:1;">{{ usuario or '' }}</span>
+                            </a>
+                            <a class="nav-link px-1" href="/logout" title="Sair"><i class="bi bi-box-arrow-right"></i> Sair</a>
+                        </div>
                     </li>
-                    <li class="nav-item"><a class="nav-link" href="/logout"><i class="bi bi-box-arrow-right"></i> Sair</a></li>
                 </ul>
             </div>
         </div>

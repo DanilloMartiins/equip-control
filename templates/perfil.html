@@ -8,12 +8,14 @@
                 <i class="bi bi-person-gear me-2"></i>Meu Perfil
             </div>
             <div class="card-body text-center">
-                <img id="fotoPerfil" alt="Foto de perfil" class="rounded-circle mx-auto d-block shadow"
-                     style="width:120px;height:120px;object-fit:cover;background:#f0f2f5;display:none;">
-                <div id="semFoto" class="rounded-circle mx-auto d-flex align-items-center justify-content-center"
-                     style="width:120px;height:120px;background:#f0f2f5;color:#aaa;font-size:3rem;">
+                <div class="position-relative mx-auto" style="width:120px;height:120px;">
+                <img id="fotoPerfil" alt="Foto de perfil" class="rounded-circle position-absolute top-0 start-0 w-100 h-100 shadow"
+                     style="object-fit:cover;background:#f0f2f5;display:none;z-index:2;">
+                <div id="semFoto" class="rounded-circle position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                     style="background:#f0f2f5;color:#aaa;font-size:3rem;">
                     <i class="bi bi-person"></i>
                 </div>
+            </div>
 
                 <div class="mt-4 text-start">
                     <label class="form-label"><i class="bi bi-person-vcard me-1"></i>Nome de exibição</label>
@@ -34,9 +36,45 @@
     </div>
 </div>
 
+<div class="modal fade" id="modalCrop" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header text-white" style="background:#2E75B6;">
+                <h6 class="modal-title mb-0"><i class="bi bi-crop me-2"></i>Posicione a foto</h6>
+            </div>
+            <div class="modal-body">
+                <div id="cropArea" class="position-relative mx-auto overflow-hidden rounded-4"
+                     style="width:280px;height:280px;background:#000;touch-action:none;">
+                    <img id="cropImg" alt="preview" class="position-absolute"
+                         style="max-width:none;cursor:move;user-select:none;touch-action:none;">
+                </div>
+                <div class="d-flex align-items-center gap-2 mt-3">
+                    <i class="bi bi-zoom-out text-muted"></i>
+                    <input type="range" id="cropZoom" class="form-range" min="100" max="400" value="100">
+                    <i class="bi bi-zoom-in text-muted"></i>
+                </div>
+                <p class="text-muted small mb-0 mt-2 text-center">Arraste para escolher a área da foto</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btnCrop" class="btn btn-axia"><i class="bi bi-check-lg me-1"></i>Usar esta foto</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
     const CHAVE_NOME = 'axia_perfil_nome';
     const CHAVE_FOTO = 'axia_perfil_foto';
+    const LADO_CROP = 280;
+
+    let imgNatural = null;
+    let scaleAtual = 1;
+    let offsetX = 0;
+    let offsetY = 0;
+    let dragging = false;
+    let startX = 0;
+    let startY = 0;
 
     function carregarPerfil() {
         const nome = localStorage.getItem(CHAVE_NOME);
@@ -52,6 +90,38 @@
         document.getElementById('semFoto').style.display = 'none';
     }
 
+    function posicionarImagem() {
+        const img = document.getElementById('cropImg');
+        img.style.left = offsetX + 'px';
+        img.style.top = offsetY + 'px';
+        img.style.width = (imgNatural.width * scaleAtual) + 'px';
+        img.style.height = (imgNatural.height * scaleAtual) + 'px';
+    }
+
+    function centralizar() {
+        const w = imgNatural.width * scaleAtual;
+        const h = imgNatural.height * scaleAtual;
+        offsetX = (LADO_CROP - w) / 2;
+        offsetY = (LADO_CROP - h) / 2;
+        posicionarImagem();
+    }
+
+    function limitarOffset() {
+        const w = imgNatural.width * scaleAtual;
+        const h = imgNatural.height * scaleAtual;
+        if (w >= LADO_CROP) {
+            offsetX = Math.min(0, Math.max(LADO_CROP - w, offsetX));
+        } else {
+            offsetX = (LADO_CROP - w) / 2;
+        }
+        if (h >= LADO_CROP) {
+            offsetY = Math.min(0, Math.max(LADO_CROP - h, offsetY));
+        } else {
+            offsetY = (LADO_CROP - h) / 2;
+        }
+        posicionarImagem();
+    }
+
     document.getElementById('campoFoto').addEventListener('change', function () {
         const arquivo = this.files[0];
         if (!arquivo) return;
@@ -60,20 +130,73 @@
         reader.onload = function (e) {
             const img = new Image();
             img.onload = function () {
-                const canvas = document.createElement('canvas');
-                const lado = 128;
-                canvas.width = lado;
-                canvas.height = lado;
-                const ctx = canvas.getContext('2d');
-                const escala = Math.max(lado / img.width, lado / img.height);
-                const w = img.width * escala;
-                const h = img.height * escala;
-                ctx.drawImage(img, (lado - w) / 2, (lado - h) / 2, w, h);
-                mostrarFoto(canvas.toDataURL('image/jpeg', 0.85));
+                imgNatural = img;
+                scaleAtual = LADO_CROP / Math.min(img.width, img.height);
+                document.getElementById('cropImg').src = e.target.result;
+                centralizar();
+                new bootstrap.Modal(document.getElementById('modalCrop')).show();
             };
             img.src = e.target.result;
         };
         reader.readAsDataURL(arquivo);
+        this.value = '';
+    });
+
+    document.getElementById('cropZoom').addEventListener('input', function () {
+        const nova = this.value / 100;
+        const centroX = offsetX + (imgNatural.width * scaleAtual) / 2;
+        const centroY = offsetY + (imgNatural.height * scaleAtual) / 2;
+        scaleAtual = nova * (LADO_CROP / Math.min(imgNatural.width, imgNatural.height));
+        offsetX = centroX - (imgNatural.width * scaleAtual) / 2;
+        offsetY = centroY - (imgNatural.height * scaleAtual) / 2;
+        limitarOffset();
+    });
+
+    const cropArea = document.getElementById('cropArea');
+    cropArea.addEventListener('mousedown', function (e) {
+        dragging = true;
+        startX = e.clientX - offsetX;
+        startY = e.clientY - offsetY;
+    });
+    window.addEventListener('mousemove', function (e) {
+        if (!dragging) return;
+        offsetX = e.clientX - startX;
+        offsetY = e.clientY - startY;
+        limitarOffset();
+    });
+    window.addEventListener('mouseup', function () {
+        dragging = false;
+    });
+
+    cropArea.addEventListener('touchstart', function (e) {
+        dragging = true;
+        const t = e.touches[0];
+        startX = t.clientX - offsetX;
+        startY = t.clientY - offsetY;
+    }, { passive: true });
+    cropArea.addEventListener('touchmove', function (e) {
+        if (!dragging) return;
+        const t = e.touches[0];
+        offsetX = t.clientX - startX;
+        offsetY = t.clientY - startY;
+        limitarOffset();
+    }, { passive: true });
+    cropArea.addEventListener('touchend', function () {
+        dragging = false;
+    });
+
+    document.getElementById('btnCrop').addEventListener('click', function () {
+        const canvas = document.createElement('canvas');
+        const lado = 128;
+        canvas.width = lado;
+        canvas.height = lado;
+        const ctx = canvas.getContext('2d');
+        const srcX = -offsetX / scaleAtual;
+        const srcY = -offsetY / scaleAtual;
+        const srcTam = LADO_CROP / scaleAtual;
+        ctx.drawImage(imgNatural, srcX, srcY, srcTam, srcTam, 0, 0, lado, lado);
+        mostrarFoto(canvas.toDataURL('image/jpeg', 0.85));
+        bootstrap.Modal.getInstance(document.getElementById('modalCrop')).hide();
     });
 
     document.getElementById('btnSalvar').addEventListener('click', function () {
