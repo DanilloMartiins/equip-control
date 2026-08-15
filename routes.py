@@ -234,7 +234,7 @@ def exportar():
     cl = Alignment(horizontal="left", vertical="center")
 
     ws.merge_cells("A1:E1")
-    ws["A1"].value = "RELATÓRIO DE EQUIPAMENTOS CADASTRADOS - AXIA"
+    ws["A1"].value = "RELATÓRIO DE EQUIPAMENTOS CADASTRADOS - Equip-Control"
     ws["A1"].font = Font(name="Calibri", size=18, bold=True, color="FFFFFF")
     ws["A1"].fill = fill_titulo
     ws["A1"].alignment = ca
@@ -409,7 +409,7 @@ def exportar():
     output.seek(0)
 
     return send_file(output,
-        download_name=f"Relatorio_Equipamentos_AXIA_{datetime.now().strftime('%d%m%Y')}.xlsx",
+        download_name=f"Relatorio_Equipamentos_EquipControl_{datetime.now().strftime('%d%m%Y')}.xlsx",
         as_attachment=True, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 
 # -----------------------------------------------------------------------
