@@ -53,19 +53,21 @@
                 <i class="bi bi-geo-alt-fill text-primary"></i> Equipamentos por Regional
             </div>
             <div class="card-body p-0">
-                <table class="table table-axia mb-0">
-                    <thead><tr><th>Regional</th><th class="text-center">Quantidade</th></tr></thead>
-                    <tbody>
-                        {% for r in por_regional %}
-                        <tr>
-                            <td><strong>{{ r.regional }}</strong></td>
-                            <td class="text-center">{{ r.qtd }}</td>
-                        </tr>
-                        {% else %}
-                        <tr><td colspan="2" class="text-center text-muted py-3">Nenhum dado cadastrado</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class="table table-axia mb-0">
+                        <thead><tr><th>Regional</th><th class="text-center">Quantidade</th></tr></thead>
+                        <tbody>
+                            {% for r in por_regional %}
+                            <tr>
+                                <td><strong>{{ r.regional }}</strong></td>
+                                <td class="text-center">{{ r.qtd }}</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="2" class="text-center text-muted py-3">Nenhum dado cadastrado</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -75,19 +77,21 @@
                 <i class="bi bi-boxes text-primary"></i> Equipamentos por Tipo
             </div>
             <div class="card-body p-0">
-                <table class="table table-axia mb-0">
-                    <thead><tr><th>Tipo</th><th class="text-center">Quantidade</th></tr></thead>
-                    <tbody>
-                        {% for t in por_tipo %}
-                        <tr>
-                            <td>{{ t.tipo }}</td>
-                            <td class="text-center">{{ t.qtd }}</td>
-                        </tr>
-                        {% else %}
-                        <tr><td colspan="2" class="text-center text-muted py-3">Nenhum dado cadastrado</td></tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div class="table-responsive">
+                    <table class="table table-axia mb-0">
+                        <thead><tr><th>Tipo</th><th class="text-center">Quantidade</th></tr></thead>
+                        <tbody>
+                            {% for t in por_tipo %}
+                            <tr>
+                                <td>{{ t.tipo }}</td>
+                                <td class="text-center">{{ t.qtd }}</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="2" class="text-center text-muted py-3">Nenhum dado cadastrado</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
@@ -99,40 +103,42 @@
         <a href="/relatorio" class="btn btn-sm btn-axia">Ver Relatório Completo</a>
     </div>
     <div class="card-body p-0">
-        <table class="table table-axia mb-0">
-            <thead>
-                <tr>
-                    <th>Código</th><th>Regional</th><th>Tipo</th><th>Status</th><th>Origem</th><th>Data Cadastro</th><th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% set status_badge = {
-                    'pendente': 'warning',
-                    'enviado': 'success',
-                    'cadastrado': 'info',
-                    'concluido': 'primary'
-                } %}
-                {% for eq in recentes %}
-                <tr>
-                    <td><a href="/equipamento/{{ eq.id }}">{{ eq.codigo }}</a></td>
-                    <td>{{ eq.regional }}</td>
-                    <td>{{ eq.tipo }}</td>
-                    <td><span class="badge bg-{{ status_badge.get(eq.status, 'secondary') }}">{{ eq.status or 'pendente' }}</span></td>
-                    <td>{{ eq.origem or 'oficio' }}</td>
-                    <td>{{ eq.data_entrada_operacao or eq.data_cadastro or '-' }}</td>
-                    <td>
-                        <a href="/equipamento/{{ eq.id }}" class="btn btn-sm btn-outline-primary" title="Detalhes"><i class="bi bi-eye"></i></a>
-                        <form action="/deletar/{{ eq.id }}" method="POST" style="display:inline"
-                              onsubmit="return confirm('Remover equipamento {{ eq.codigo }}?')">
-                            <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
-                        </form>
-                    </td>
-                </tr>
-                {% else %}
-                <tr><td colspan="7" class="text-center text-muted py-4">Nenhum equipamento cadastrado ainda.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
+        <div class="table-responsive">
+            <table class="table table-axia mb-0">
+                <thead>
+                    <tr>
+                        <th>Código</th><th>Regional</th><th>Tipo</th><th>Status</th><th>Origem</th><th>Data Cadastro</th><th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% set status_badge = {
+                        'pendente': 'warning',
+                        'enviado': 'success',
+                        'cadastrado': 'info',
+                        'concluido': 'primary'
+                    } %}
+                    {% for eq in recentes %}
+                    <tr>
+                        <td><a href="/equipamento/{{ eq.id }}">{{ eq.codigo }}</a></td>
+                        <td>{{ eq.regional }}</td>
+                        <td>{{ eq.tipo }}</td>
+                        <td><span class="badge bg-{{ status_badge.get(eq.status, 'secondary') }}">{{ eq.status or 'pendente' }}</span></td>
+                        <td>{{ eq.origem or 'oficio' }}</td>
+                        <td>{{ eq.data_entrada_operacao or eq.data_cadastro or '-' }}</td>
+                        <td>
+                            <a href="/equipamento/{{ eq.id }}" class="btn btn-sm btn-outline-primary" title="Detalhes"><i class="bi bi-eye"></i></a>
+                            <form action="/deletar/{{ eq.id }}" method="POST" style="display:inline"
+                                  onsubmit="return confirm('Remover equipamento {{ eq.codigo }}?')">
+                                <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7" class="text-center text-muted py-4">Nenhum equipamento cadastrado ainda.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 {% endblock %}
