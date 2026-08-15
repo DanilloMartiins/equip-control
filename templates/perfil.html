@@ -45,8 +45,8 @@
             <div class="modal-body">
                 <div id="cropArea" class="position-relative mx-auto overflow-hidden rounded-4"
                      style="width:280px;height:280px;background:#000;touch-action:none;">
-                    <img id="cropImg" alt="preview" class="position-absolute"
-                         style="max-width:none;cursor:move;user-select:none;touch-action:none;">
+                    <img id="cropImg" alt="preview" class="position-absolute" draggable="false"
+                         style="max-width:none;cursor:move;user-select:none;touch-action:none;-webkit-user-drag:none;">
                 </div>
                 <div class="d-flex align-items-center gap-2 mt-3">
                     <i class="bi bi-zoom-out text-muted"></i>
@@ -153,6 +153,9 @@
     });
 
     const cropArea = document.getElementById('cropArea');
+    cropArea.addEventListener('dragstart', function (e) {
+        e.preventDefault();
+    });
     cropArea.addEventListener('mousedown', function (e) {
         dragging = true;
         startX = e.clientX - offsetX;
