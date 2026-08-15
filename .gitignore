@@ -19,3 +19,4 @@ build/
 *.db
 .vercel
 .env*
+credenciais_login.txt

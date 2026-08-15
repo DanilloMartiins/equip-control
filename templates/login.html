@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - AXIA Controle de Equipamentos</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #1F4E79, #2E75B6);
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .card-login {
+            border: none;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+            width: 100%;
+            max-width: 400px;
+        }
+        .logo-circle {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1F4E79, #2E75B6);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            margin: -48px auto 0;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        .btn-axia { background: #2E75B6; color: white; border: none; }
+        .btn-axia:hover { background: #1F4E79; color: white; }
+        .flash-msg { position: fixed; top: 20px; right: 20px; z-index: 9999; min-width: 300px; }
+        footer { font-size: 0.85rem; color: #cfe0f0; }
+    </style>
+</head>
+<body>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-msg">
+        {% for category, msg in messages %}
+        <div class="alert alert-{{ category }} alert-dismissible fade show shadow" role="alert">
+            {{ msg }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <div class="card card-login p-4">
+        <div class="logo-circle mb-3">
+            <i class="bi bi-database-gear"></i>
+        </div>
+        <h4 class="text-center text-axia fw-bold mb-1">AXIA</h4>
+        <p class="text-center text-muted mb-4">Controle de Equipamentos</p>
+        <form method="POST">
+            <div class="mb-3">
+                <label class="form-label"><i class="bi bi-person me-1"></i>Usuário</label>
+                <input type="text" class="form-control" name="usuario" placeholder="Digite seu usuário" required autofocus>
+            </div>
+            <div class="mb-4">
+                <label class="form-label"><i class="bi bi-lock me-1"></i>Senha</label>
+                <input type="password" class="form-control" name="senha" placeholder="Digite sua senha" required>
+            </div>
+            <button type="submit" class="btn btn-axia w-100 py-2 fw-semibold">
+                <i class="bi bi-box-arrow-in-right me-1"></i> Entrar
+            </button>
+        </form>
+    </div>
+
+    <footer class="position-fixed bottom-0 w-100 text-center py-2">
+        Sistema AXIA - Controle de Equipamentos &copy; 2026 | Danillo Martins
+    </footer>
+</body>
+</html>

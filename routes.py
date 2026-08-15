@@ -1,16 +1,44 @@
 from io import BytesIO
 from datetime import datetime, date
 
-from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, send_file, jsonify, session
+from werkzeug.security import check_password_hash
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl import load_workbook
 
-from config import REGIONAIS
+from config import REGIONAIS, LOGIN_USER, LOGIN_PASS_HASH
 from db import get_db, padronizar_tipo, IntegrityError, add_envio, add_pendencia, add_historico
 from matcher import identificar_colunas, mapear_para_insert
 
 bp = Blueprint('routes', __name__)
+
+@bp.before_request
+def exigir_login():
+    if session.get('usuario') != LOGIN_USER:
+        if request.endpoint != 'routes.login':
+            return redirect(url_for('routes.login'))
+
+# -----------------------------------------------------------------------
+# LOGIN / LOGOUT
+# -----------------------------------------------------------------------
+@bp.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        usuario = request.form.get('usuario', '').strip()
+        senha = request.form.get('senha', '')
+        if usuario == LOGIN_USER and check_password_hash(LOGIN_PASS_HASH, senha):
+            session['usuario'] = usuario
+            flash(f'Bem-vindo, {usuario}!', 'success')
+            return redirect(url_for('routes.index'))
+        flash('Usuário ou senha inválidos.', 'danger')
+    return render_template('login.html')
+
+@bp.route('/logout')
+def logout():
+    session.pop('usuario', None)
+    flash('Você saiu do sistema.', 'info')
+    return redirect(url_for('routes.login'))
 
 # -----------------------------------------------------------------------
 # DASHBOARD
