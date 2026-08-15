@@ -205,6 +205,47 @@ def _migrate_equipamentos(conn):
 
     _normalizar_regionais(conn)
     _migrar_data_cadastro(conn)
+    _normalizar_tipos(conn)
+
+
+def _normalizar_tipos(conn):
+    mapeamento = {
+        'tc': 'Transformador de Corrente',
+        'tp': 'Transformador de Potência',
+        'transformadorcorrente': 'Transformador de Corrente',
+        'transformador corrente': 'Transformador de Corrente',
+        'transformadorpotencial': 'Transformador de Potência',
+        'transformador potencial': 'Transformador de Potência',
+        'secionador': 'Seccionador',
+        'pararaios': 'Para-raio',
+        'registrador de perturbação': 'Registrador de Perturbação - RDP',
+    }
+
+    try:
+        rows = conn.execute("SELECT DISTINCT tipo FROM equipamentos").fetchall()
+    except Exception:
+        return
+
+    for row in rows:
+        tipo = row['tipo'] if isinstance(row, dict) else row[0]
+        if not tipo:
+            continue
+        chave = tipo.strip().lower()
+        if chave in mapeamento and tipo != mapeamento[chave]:
+            try:
+                conn.execute(
+                    "UPDATE equipamentos SET tipo = %s WHERE tipo = %s",
+                    (mapeamento[chave], tipo)
+                )
+                conn.commit()
+            except Exception:
+                conn.rollback()
+
+    try:
+        conn.execute("DELETE FROM equipamentos WHERE codigo IN ('Eq. SAP PM', 'Num_Operacional')")
+        conn.commit()
+    except Exception:
+        conn.rollback()
 
 
 def _normalizar_regionais(conn):
