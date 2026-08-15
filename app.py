@@ -1,5 +1,5 @@
 from datetime import datetime
-from flask import Flask
+from flask import Flask, session
 from config import SECRET_KEY
 from db import init_db
 from routes import bp
@@ -12,6 +12,10 @@ app.register_blueprint(bp)
 @app.context_processor
 def inject_now():
     return {'now': datetime.now}
+
+@app.context_processor
+def inject_usuario():
+    return {'usuario': session.get('usuario')}
 
 init_db()
 

@@ -41,7 +41,7 @@
     function carregarPerfil() {
         const nome = localStorage.getItem(CHAVE_NOME);
         const foto = localStorage.getItem(CHAVE_FOTO);
-        if (nome) document.getElementById('campoNome').value = nome;
+        document.getElementById('campoNome').value = nome || '{{ usuario or "" }}';
         if (foto) mostrarFoto(foto);
     }
 
@@ -77,7 +77,7 @@
     });
 
     document.getElementById('btnSalvar').addEventListener('click', function () {
-        const nome = document.getElementById('campoNome').value.trim();
+        const nome = document.getElementById('campoNome').value.trim() || '{{ usuario or "" }}';
         const foto = document.getElementById('fotoPerfil').src;
         localStorage.setItem(CHAVE_NOME, nome);
         localStorage.setItem(CHAVE_FOTO, foto.startsWith('data:') ? foto : '');
