@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-5">
+        <div class="card">
+            <div class="card-header text-white" style="background:#2E75B6;">
+                <i class="bi bi-person-gear me-2"></i>Meu Perfil
+            </div>
+            <div class="card-body text-center">
+                <img id="fotoPerfil" alt="Foto de perfil" class="rounded-circle mx-auto d-block shadow"
+                     style="width:120px;height:120px;object-fit:cover;background:#f0f2f5;display:none;">
+                <div id="semFoto" class="rounded-circle mx-auto d-flex align-items-center justify-content-center"
+                     style="width:120px;height:120px;background:#f0f2f5;color:#aaa;font-size:3rem;">
+                    <i class="bi bi-person"></i>
+                </div>
+
+                <div class="mt-4 text-start">
+                    <label class="form-label"><i class="bi bi-person-vcard me-1"></i>Nome de exibição</label>
+                    <input type="text" id="campoNome" class="form-control" placeholder="Seu nome" maxlength="60">
+                </div>
+
+                <div class="mt-3 text-start">
+                    <label class="form-label"><i class="bi bi-image me-1"></i>Foto de perfil</label>
+                    <input type="file" id="campoFoto" class="form-control" accept="image/*">
+                    <div class="form-text">Foto opcional. Salva apenas no navegador (localStorage).</div>
+                </div>
+
+                <button id="btnSalvar" class="btn btn-axia w-100 mt-4 fw-semibold">
+                    <i class="bi bi-check-circle me-1"></i> Salvar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const CHAVE_NOME = 'axia_perfil_nome';
+    const CHAVE_FOTO = 'axia_perfil_foto';
+
+    function carregarPerfil() {
+        const nome = localStorage.getItem(CHAVE_NOME);
+        const foto = localStorage.getItem(CHAVE_FOTO);
+        if (nome) document.getElementById('campoNome').value = nome;
+        if (foto) mostrarFoto(foto);
+    }
+
+    function mostrarFoto(src) {
+        const img = document.getElementById('fotoPerfil');
+        img.src = src;
+        img.style.display = 'block';
+        document.getElementById('semFoto').style.display = 'none';
+    }
+
+    document.getElementById('campoFoto').addEventListener('change', function () {
+        const arquivo = this.files[0];
+        if (!arquivo) return;
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            const img = new Image();
+            img.onload = function () {
+                const canvas = document.createElement('canvas');
+                const lado = 128;
+                canvas.width = lado;
+                canvas.height = lado;
+                const ctx = canvas.getContext('2d');
+                const escala = Math.max(lado / img.width, lado / img.height);
+                const w = img.width * escala;
+                const h = img.height * escala;
+                ctx.drawImage(img, (lado - w) / 2, (lado - h) / 2, w, h);
+                mostrarFoto(canvas.toDataURL('image/jpeg', 0.85));
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(arquivo);
+    });
+
+    document.getElementById('btnSalvar').addEventListener('click', function () {
+        const nome = document.getElementById('campoNome').value.trim();
+        const foto = document.getElementById('fotoPerfil').src;
+        localStorage.setItem(CHAVE_NOME, nome);
+        localStorage.setItem(CHAVE_FOTO, foto.startsWith('data:') ? foto : '');
+        location.reload();
+    });
+
+    carregarPerfil();
+</script>
+{% endblock %}

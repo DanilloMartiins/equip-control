@@ -44,6 +44,12 @@
                     <li class="nav-item"><a class="nav-link" href="/exportar"><i class="bi bi-download"></i> Exportar Excel</a></li>
                     <li class="nav-item"><a class="nav-link" href="/envios"><i class="bi bi-send-fill"></i> Envios</a></li>
                     <li class="nav-item"><a class="nav-link" href="/pendencias"><i class="bi bi-exclamation-triangle-fill"></i> Pendências</a></li>
+                    <li class="nav-item d-flex align-items-center me-2">
+                        <a class="nav-link d-flex align-items-center" href="/perfil">
+                            <img id="navFoto" alt="foto" class="rounded-circle me-2" style="width:28px;height:28px;object-fit:cover;display:none;">
+                            <span id="navNome"></span>
+                        </a>
+                    </li>
                     <li class="nav-item"><a class="nav-link" href="/logout"><i class="bi bi-box-arrow-right"></i> Sair</a></li>
                 </ul>
             </div>
@@ -79,6 +85,16 @@
                 bs.close();
             });
         }, 5000);
+    </script>
+    <script>
+        const nome = localStorage.getItem('axia_perfil_nome');
+        const foto = localStorage.getItem('axia_perfil_foto');
+        if (nome) document.getElementById('navNome').textContent = nome;
+        if (foto) {
+            const img = document.getElementById('navFoto');
+            img.src = foto;
+            img.style.display = 'inline-block';
+        }
     </script>
 </body>
 </html>
