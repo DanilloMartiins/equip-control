@@ -19,13 +19,13 @@
 
                 <div class="mt-4 text-start">
                     <label class="form-label"><i class="bi bi-person-vcard me-1"></i>Nome de exibição</label>
-                    <input type="text" id="campoNome" class="form-control" placeholder="Seu nome" maxlength="60">
+                    <input type="text" id="campoNome" class="form-control" placeholder="Seu nome" maxlength="60" value="{{ perfil_nome or usuario_nome }}">
                 </div>
 
                 <div class="mt-3 text-start">
                     <label class="form-label"><i class="bi bi-image me-1"></i>Foto de perfil</label>
                     <input type="file" id="campoFoto" class="form-control" accept="image/*">
-                    <div class="form-text">Foto opcional. Salva apenas no navegador (localStorage).</div>
+                    <div class="form-text">Foto opcional. Salva no banco do sistema.</div>
                 </div>
 
                 <button id="btnSalvar" class="btn btn-axia w-100 mt-4 fw-semibold">
@@ -64,9 +64,8 @@
 </div>
 
 <script>
-    const CHAVE_NOME = 'axia_perfil_nome';
-    const CHAVE_FOTO = 'axia_perfil_foto';
     const LADO_CROP = 280;
+    const fotoInicial = {{ perfil_foto|tojson }};
 
     let imgNatural = null;
     let scaleAtual = 1;
@@ -76,19 +75,14 @@
     let startX = 0;
     let startY = 0;
 
-    function carregarPerfil() {
-        const nome = localStorage.getItem(CHAVE_NOME);
-        const foto = localStorage.getItem(CHAVE_FOTO);
-        document.getElementById('campoNome').value = nome || '{{ usuario or "" }}';
-        if (foto) mostrarFoto(foto);
-    }
-
     function mostrarFoto(src) {
         const img = document.getElementById('fotoPerfil');
         img.src = src;
         img.style.display = 'block';
         document.getElementById('semFoto').style.display = 'none';
     }
+
+    if (fotoInicial) mostrarFoto(fotoInicial);
 
     function posicionarImagem() {
         const img = document.getElementById('cropImg');
@@ -203,13 +197,17 @@
     });
 
     document.getElementById('btnSalvar').addEventListener('click', function () {
-        const nome = document.getElementById('campoNome').value.trim() || '{{ usuario or "" }}';
-        const foto = document.getElementById('fotoPerfil').src;
-        localStorage.setItem(CHAVE_NOME, nome);
-        localStorage.setItem(CHAVE_FOTO, foto.startsWith('data:') ? foto : '');
-        location.reload();
+        const img = document.getElementById('fotoPerfil');
+        const temFoto = img.src && img.src.startsWith('data:');
+        const fd = new FormData();
+        fd.append('nome', document.getElementById('campoNome').value.trim());
+        if (temFoto) fd.append('foto', img.src);
+        fetch('/perfil', { method: 'POST', body: fd })
+            .then(function (r) {
+                if (r.ok) location.reload();
+                else alert('Erro ao salvar perfil.');
+            })
+            .catch(function () { alert('Erro ao salvar perfil.'); });
     });
-
-    carregarPerfil();
 </script>
 {% endblock %}

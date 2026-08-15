@@ -63,6 +63,22 @@
                 </tbody>
             </table>
         </div>
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 p-2 border-top">
+            <small class="text-muted">Exibindo {{ equipamentos|length }} de {{ total }} equipamentos</small>
+            <div class="d-flex align-items-center gap-2">
+                <span class="text-muted small">QTD</span>
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-axia dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        {% if limite == 'todos' %}Todos{% else %}{{ limite }}{% endif %}
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        {% for opcao in LIMITES_RELATORIO %}
+                        <li><a class="dropdown-item {% if limite == opcao %}active{% endif %}" href="/relatorio?limite={{ opcao }}">{% if opcao == 'todos' %}Todos{% else %}{{ opcao }}{% endif %}</a></li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 

@@ -8,7 +8,7 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl import load_workbook
 
 from config import REGIONAIS, LOGIN_USER, LOGIN_PASS_HASH
-from db import get_db, padronizar_tipo, IntegrityError, add_envio, add_pendencia, add_historico
+from db import get_db, padronizar_tipo, IntegrityError, add_envio, add_pendencia, add_historico, USING_PG
 from matcher import identificar_colunas, mapear_para_insert
 
 bp = Blueprint('routes', __name__)
@@ -43,9 +43,47 @@ def logout():
 # -----------------------------------------------------------------------
 # PERFIL
 # -----------------------------------------------------------------------
-@bp.route('/perfil')
+@bp.route('/perfil', methods=['GET', 'POST'])
 def perfil():
-    return render_template('perfil.html')
+    conn = get_db()
+
+    if request.method == 'POST':
+        nome = request.form.get('nome', '').strip() or None
+        foto = request.form.get('foto') or None
+
+        if nome or foto:
+            if USING_PG:
+                conn.execute("""
+                    INSERT INTO usuarios (usuario, nome, foto, updated_at)
+                    VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+                    ON CONFLICT (usuario) DO UPDATE SET
+                        nome = EXCLUDED.nome,
+                        foto = COALESCE(EXCLUDED.foto, usuarios.foto),
+                        updated_at = CURRENT_TIMESTAMP
+                """, (session.get('usuario'), nome, foto))
+            else:
+                conn.execute("""
+                    INSERT INTO usuarios (usuario, nome, foto)
+                    VALUES (?, ?, ?)
+                    ON CONFLICT (usuario) DO UPDATE SET
+                        nome = excluded.nome,
+                        foto = COALESCE(excluded.foto, usuarios.foto)
+                """, (session.get('usuario'), nome, foto))
+            conn.commit()
+        conn.close()
+        flash('Perfil atualizado!', 'success')
+        return redirect(url_for('routes.perfil'))
+
+    perfil_row = None
+    if session.get('usuario'):
+        perfil_row = conn.execute(
+            "SELECT nome, foto FROM usuarios WHERE usuario = %s", (session['usuario'],)
+        ).fetchone()
+    conn.close()
+
+    return render_template('perfil.html',
+        perfil_nome=perfil_row['nome'] if perfil_row else None,
+        perfil_foto=perfil_row['foto'] if perfil_row else None)
 
 # -----------------------------------------------------------------------
 # DASHBOARD
@@ -179,10 +217,24 @@ def importar() -> str:
 # -----------------------------------------------------------------------
 # RELATORIO WEB
 # -----------------------------------------------------------------------
+LIMITES_RELATORIO = ['50', '100', '500', '1000', 'todos']
+
 @bp.route('/relatorio')
 def relatorio() -> str:
+    limite = request.args.get('limite', '50')
+    if limite not in LIMITES_RELATORIO:
+        limite = '50'
+
     conn = get_db()
-    equipamentos = conn.execute("SELECT * FROM equipamentos ORDER BY regional, tipo, codigo").fetchall()
+
+    if limite == 'todos':
+        equipamentos = conn.execute("SELECT * FROM equipamentos ORDER BY regional, tipo, codigo").fetchall()
+    else:
+        equipamentos = conn.execute(
+            "SELECT * FROM equipamentos ORDER BY regional, tipo, codigo LIMIT %s",
+            (int(limite),)
+        ).fetchall()
+
     por_regional = conn.execute("""
         SELECT regional, COUNT(*) as qtd FROM equipamentos GROUP BY regional ORDER BY qtd DESC
     """).fetchall()
@@ -193,7 +245,8 @@ def relatorio() -> str:
     conn.close()
 
     return render_template('relatorio.html',
-        equipamentos=equipamentos, por_regional=por_regional, por_tipo=por_tipo, total=total)
+        equipamentos=equipamentos, por_regional=por_regional, por_tipo=por_tipo,
+        total=total, limite=limite, LIMITES_RELATORIO=LIMITES_RELATORIO)
 
 # -----------------------------------------------------------------------
 # EXPORTAR EXCEL
