@@ -1,8 +1,13 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
     <h4 class="mb-0 text-axia"><i class="bi bi-file-earmark-text-fill me-2"></i>Relatório de Equipamentos</h4>
-    <a href="/exportar" class="btn btn-axia"><i class="bi bi-download"></i> Baixar Excel</a>
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalFiltro">
+            <i class="bi bi-funnel"></i> Filtro
+        </button>
+        <a href="/exportar?limite={{ limite }}&pagina={{ pagina_atual }}{% if filtros_qs %}&{{ filtros_qs }}{% endif %}" class="btn btn-axia"><i class="bi bi-download"></i> Baixar Excel</a>
+    </div>
 </div>
 
 <div class="row g-2 mb-3">
@@ -58,13 +63,17 @@
                         <td>{{ eq.data_solicitacao or '-' }}</td>
                     </tr>
                     {% else %}
+                    {% if busca or regionais or tipos or status %}
+                    <tr><td colspan="5" class="text-center text-muted py-4">Equipamento não encontrado ou não cadastrado</td></tr>
+                    {% else %}
                     <tr><td colspan="5" class="text-center text-muted py-4">Nenhum equipamento cadastrado.</td></tr>
+                    {% endif %}
                     {% endfor %}
                 </tbody>
             </table>
         </div>
         <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 p-2 border-top">
-            <small class="text-muted">Exibindo {{ equipamentos|length }} de {{ total }} equipamentos</small>
+            <small class="text-muted">Exibindo {{ equipamentos|length }} de {{ total_filtro }} equipamentos{% if limite != 'todos' %} - Página {{ pagina_atual }} de {{ total_paginas }}{% endif %}</small>
             <div class="d-flex align-items-center gap-2">
                 <span class="text-muted small">QTD</span>
                 <div class="dropdown">
@@ -73,10 +82,17 @@
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         {% for opcao in LIMITES_RELATORIO %}
-                        <li><a class="dropdown-item {% if limite == opcao %}active{% endif %}" href="/relatorio?limite={{ opcao }}">{% if opcao == 'todos' %}Todos{% else %}{{ opcao }}{% endif %}</a></li>
+                        <li><a class="dropdown-item {% if limite == opcao %}active{% endif %}" href="/relatorio?limite={{ opcao }}{% if filtros_qs %}&{{ filtros_qs }}{% endif %}">{% if opcao == 'todos' %}Todos{% else %}{{ opcao }}{% endif %}</a></li>
                         {% endfor %}
                     </ul>
                 </div>
+                {% if limite != 'todos' %}
+                <div class="btn-group" role="group">
+                    <a class="btn btn-sm btn-outline-secondary {% if pagina_atual <= 1 %}disabled{% endif %}" href="/relatorio?limite={{ limite }}&pagina={{ pagina_atual - 1 }}{% if filtros_qs %}&{{ filtros_qs }}{% endif %}"><i class="bi bi-chevron-left"></i></a>
+                    <span class="btn btn-sm btn-outline-secondary disabled">{{ pagina_atual }} / {{ total_paginas }}</span>
+                    <a class="btn btn-sm btn-outline-secondary {% if pagina_atual >= total_paginas %}disabled{% endif %}" href="/relatorio?limite={{ limite }}&pagina={{ pagina_atual + 1 }}{% if filtros_qs %}&{{ filtros_qs }}{% endif %}"><i class="bi bi-chevron-right"></i></a>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -128,4 +144,78 @@
         </div>
     </div>
 </div>
+
+<div class="modal fade" id="modalFiltro" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form method="get" action="/relatorio">
+                <div class="modal-header text-white" style="background:#2E75B6;">
+                    <h6 class="modal-title mb-0"><i class="bi bi-funnel me-2"></i>Filtrar Equipamentos</h6>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold"><i class="bi bi-search me-1"></i>Buscar</label>
+                        <input type="text" name="q" class="form-control" value="{{ busca }}" placeholder="Nº do Equipamento, Regional ou Tipo...">
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Tipo de Equipamento</label>
+                            <input type="text" class="form-control form-control-sm mb-2 busca-check" data-alvo="listaTipos" placeholder="Digitar p/ achar rápido...">
+                            <div id="listaTipos" class="border rounded p-2" style="max-height:200px;overflow-y:auto;">
+                                {% for t in tipos_opcoes %}
+                                <div class="form-check item-check">
+                                    <input class="form-check-input" type="checkbox" name="tipo" value="{{ t }}" id="tipo{{ loop.index }}" {% if t in tipos %}checked{% endif %}>
+                                    <label class="form-check-label" for="tipo{{ loop.index }}">{{ t }}</label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Regional</label>
+                            <input type="text" class="form-control form-control-sm mb-2 busca-check" data-alvo="listaRegionais" placeholder="Digitar p/ achar rápido...">
+                            <div id="listaRegionais" class="border rounded p-2" style="max-height:200px;overflow-y:auto;">
+                                {% for r in por_regional %}
+                                <div class="form-check item-check">
+                                    <input class="form-check-input" type="checkbox" name="regional" value="{{ r.regional }}" id="reg{{ loop.index }}" {% if r.regional in regionais %}checked{% endif %}>
+                                    <label class="form-check-label" for="reg{{ loop.index }}">{{ r.regional }}</label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Status</label>
+                            <input type="text" class="form-control form-control-sm mb-2 busca-check" data-alvo="listaStatus" placeholder="Digitar p/ achar rápido...">
+                            <div id="listaStatus" class="border rounded p-2" style="max-height:200px;overflow-y:auto;">
+                                {% for s in status_opcoes %}
+                                <div class="form-check item-check">
+                                    <input class="form-check-input" type="checkbox" name="status" value="{{ s }}" id="st{{ loop.index }}" {% if s in status %}checked{% endif %}>
+                                    <label class="form-check-label" for="st{{ loop.index }}">{{ s }}</label>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <input type="hidden" name="limite" value="{{ limite }}">
+                </div>
+                <div class="modal-footer">
+                    <a href="/relatorio" class="btn btn-outline-secondary"><i class="bi bi-x-lg me-1"></i>Limpar filtros</a>
+                    <button type="submit" class="btn btn-axia"><i class="bi bi-check-lg me-1"></i>Aplicar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.querySelectorAll('.busca-check').forEach(function (input) {
+        input.addEventListener('input', function () {
+            const alvo = document.getElementById(this.dataset.alvo);
+            const termo = this.value.toLowerCase();
+            alvo.querySelectorAll('.item-check').forEach(function (item) {
+                item.style.display = item.textContent.toLowerCase().includes(termo) ? '' : 'none';
+            });
+        });
+    });
+</script>
 {% endblock %}

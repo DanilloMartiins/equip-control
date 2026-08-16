@@ -224,6 +224,22 @@ def _migrate_equipamentos(conn):
     _normalizar_regionais(conn)
     _migrar_data_cadastro(conn)
     _normalizar_tipos(conn)
+    _criar_indices(conn)
+
+def _criar_indices(conn):
+    indices = [
+        "CREATE INDEX IF NOT EXISTS idx_eq_regional ON equipamentos(regional)",
+        "CREATE INDEX IF NOT EXISTS idx_eq_tipo ON equipamentos(tipo)",
+        "CREATE INDEX IF NOT EXISTS idx_eq_status ON equipamentos(status)",
+        "CREATE INDEX IF NOT EXISTS idx_eq_ordem ON equipamentos(regional, tipo, codigo)",
+    ]
+    for sql in indices:
+        try:
+            conn.execute(sql)
+            conn.commit()
+        except Exception:
+            conn.rollback()
+            pass
 
 
 def _normalizar_tipos(conn):

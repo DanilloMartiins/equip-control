@@ -71,7 +71,7 @@ def perfil():
                 """, (session.get('usuario'), nome, foto))
             conn.commit()
         conn.close()
-        flash('Perfil atualizado!', 'success')
+        flash('Perfil alterado com sucesso!', 'success')
         return redirect(url_for('routes.perfil'))
 
     perfil_row = None
@@ -140,6 +140,10 @@ def cadastrar() -> str:
 
         conn = get_db()
         try:
+            # Mensagens de confirmação seguem o padrão "Entidade + verbo + com sucesso"
+            # (ex: "Equipamento cadastrado com sucesso!") de propósito: deixam a porta
+            # aberta pro sistema escalar e gerenciar outras entidades (pessoa, ativo,
+            # veículo etc.) no futuro, sem precisar reescrever nada.
             conn.execute(
                 "INSERT INTO equipamentos (codigo, regional, tipo, fabricante, modelo, numero_serie, local_instalacao, idbdit, origem, data_cadastro, data_entrada_operacao, data_solicitacao) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
                 (codigo, regional, tipo, fabricante, modelo, numero_serie, local_instalacao, idbdit, origem, data_cad, data_entrada, data_sol)
@@ -219,20 +223,84 @@ def importar() -> str:
 # -----------------------------------------------------------------------
 LIMITES_RELATORIO = ['50', '100', '500', '1000', 'todos']
 
+def _filtros_query():
+    busca = request.args.get('q', '').strip()
+    regionais = [r for r in request.args.getlist('regional') if r]
+    tipos = [t for t in request.args.getlist('tipo') if t]
+    status = [s for s in request.args.getlist('status') if s]
+    return busca, regionais, tipos, status
+
+def _where_filtros(busca, regionais, tipos, status):
+    wheres = []
+    params = []
+    if busca:
+        wheres.append("(LOWER(codigo) LIKE LOWER(%s) OR LOWER(regional) LIKE LOWER(%s) OR LOWER(tipo) LIKE LOWER(%s))")
+        params.extend([f'%{busca}%'] * 3)
+    if regionais:
+        wheres.append("regional IN (" + ','.join(['%s'] * len(regionais)) + ")")
+        params.extend(regionais)
+    if tipos:
+        wheres.append("tipo IN (" + ','.join(['%s'] * len(tipos)) + ")")
+        params.extend(tipos)
+    if status:
+        wheres.append("status IN (" + ','.join(['%s'] * len(status)) + ")")
+        params.extend(status)
+    return wheres, params
+
+def _qs_filtros(busca, regionais, tipos, status):
+    from urllib.parse import quote
+    parts = []
+    if busca:
+        parts.append('q=' + quote(busca))
+    for r in regionais:
+        parts.append('regional=' + quote(r))
+    for t in tipos:
+        parts.append('tipo=' + quote(t))
+    for s in status:
+        parts.append('status=' + quote(s))
+    return '&'.join(parts)
+
 @bp.route('/relatorio')
 def relatorio() -> str:
     limite = request.args.get('limite', '50')
     if limite not in LIMITES_RELATORIO:
         limite = '50'
 
+    busca, regionais, tipos, status = _filtros_query()
+    wheres, params = _where_filtros(busca, regionais, tipos, status)
+    where_clause = " WHERE " + " AND ".join(wheres) if wheres else ""
+
     conn = get_db()
 
+    total = conn.execute("SELECT COUNT(*) AS total FROM equipamentos").fetchone()['total']
+    total_filtro = conn.execute(
+        f"SELECT COUNT(*) AS total FROM equipamentos{where_clause}", params
+    ).fetchone()['total']
+
+    tipos_opcoes = [t['tipo'] for t in conn.execute(
+        "SELECT DISTINCT tipo FROM equipamentos WHERE tipo IS NOT NULL AND tipo != '' ORDER BY tipo"
+    ).fetchall()]
+    status_opcoes = [s['status'] for s in conn.execute(
+        "SELECT DISTINCT status FROM equipamentos WHERE status IS NOT NULL AND status != '' ORDER BY status"
+    ).fetchall()]
+
     if limite == 'todos':
-        equipamentos = conn.execute("SELECT * FROM equipamentos ORDER BY regional, tipo, codigo").fetchall()
-    else:
         equipamentos = conn.execute(
-            "SELECT * FROM equipamentos ORDER BY regional, tipo, codigo LIMIT %s",
-            (int(limite),)
+            f"SELECT * FROM equipamentos{where_clause} ORDER BY regional, tipo, codigo", params
+        ).fetchall()
+        pagina_atual = 1
+        total_paginas = 1
+    else:
+        limite_int = int(limite)
+        total_paginas = max((total_filtro + limite_int - 1) // limite_int, 1)
+        pagina_atual = max(request.args.get('pagina', 1, type=int), 1)
+        if pagina_atual > total_paginas:
+            pagina_atual = total_paginas
+        offset = (pagina_atual - 1) * limite_int
+        params_pag = params + [limite_int, offset]
+        equipamentos = conn.execute(
+            f"SELECT * FROM equipamentos{where_clause} ORDER BY regional, tipo, codigo LIMIT %s OFFSET %s",
+            params_pag
         ).fetchall()
 
     por_regional = conn.execute("""
@@ -241,23 +309,47 @@ def relatorio() -> str:
     por_tipo = conn.execute("""
         SELECT tipo, COUNT(*) as qtd FROM equipamentos GROUP BY tipo ORDER BY qtd DESC
     """).fetchall()
-    total = conn.execute("SELECT COUNT(*) AS total FROM equipamentos").fetchone()['total']
     conn.close()
+
+    filtros_qs = _qs_filtros(busca, regionais, tipos, status)
 
     return render_template('relatorio.html',
         equipamentos=equipamentos, por_regional=por_regional, por_tipo=por_tipo,
-        total=total, limite=limite, LIMITES_RELATORIO=LIMITES_RELATORIO)
+        total=total, total_filtro=total_filtro, limite=limite, LIMITES_RELATORIO=LIMITES_RELATORIO,
+        pagina_atual=pagina_atual, total_paginas=total_paginas,
+        busca=busca, regionais=regionais, tipos=tipos, status=status,
+        tipos_opcoes=tipos_opcoes, status_opcoes=status_opcoes, filtros_qs=filtros_qs)
 
 # -----------------------------------------------------------------------
 # EXPORTAR EXCEL
 # -----------------------------------------------------------------------
 @bp.route('/exportar')
 def exportar():
+    limite = request.args.get('limite', 'todos')
+    if limite not in LIMITES_RELATORIO:
+        limite = 'todos'
+
+    busca, regionais, tipos, status = _filtros_query()
+    wheres, params = _where_filtros(busca, regionais, tipos, status)
+    where_clause = " WHERE " + " AND ".join(wheres) if wheres else ""
+
     conn = get_db()
-    dados = conn.execute("""
-        SELECT codigo, regional, tipo, data_entrada_operacao, data_solicitacao
-        FROM equipamentos ORDER BY regional, tipo, codigo
-    """).fetchall()
+
+    if limite == 'todos':
+        dados = conn.execute("""
+            SELECT codigo, regional, tipo, data_entrada_operacao, data_solicitacao
+            FROM equipamentos{where_clause} ORDER BY regional, tipo, codigo
+        """.format(where_clause=where_clause), params).fetchall()
+    else:
+        limite_int = int(limite)
+        pagina_atual = max(request.args.get('pagina', 1, type=int), 1)
+        offset = (pagina_atual - 1) * limite_int
+        params_pag = params + [limite_int, offset]
+        dados = conn.execute("""
+            SELECT codigo, regional, tipo, data_entrada_operacao, data_solicitacao
+            FROM equipamentos{where_clause} ORDER BY regional, tipo, codigo LIMIT %s OFFSET %s
+        """.format(where_clause=where_clause), params_pag).fetchall()
+
     por_regional = conn.execute("""
         SELECT regional, COUNT(*) as qtd FROM equipamentos GROUP BY regional ORDER BY qtd DESC
     """).fetchall()
@@ -639,7 +731,7 @@ def deletar(id: int) -> str:
     conn.execute("DELETE FROM equipamentos WHERE id = %s", (id,))
     conn.commit()
     conn.close()
-    flash('Equipamento removido.', 'success')
+    flash('Equipamento deletado com sucesso!', 'success')
     return redirect(url_for('routes.index'))
 
 # -----------------------------------------------------------------------
@@ -695,7 +787,7 @@ def equipamento_editar(id: int) -> str:
         add_historico(conn, id, 'edicao', 'Equipamento editado')
         conn.commit()
         conn.close()
-        flash('Equipamento atualizado!', 'success')
+        flash('Equipamento alterado com sucesso!', 'success')
         return redirect(url_for('routes.equipamento_detalhe', id=id))
 
     eq = conn.execute("SELECT * FROM equipamentos WHERE id = %s", (id,)).fetchone()
