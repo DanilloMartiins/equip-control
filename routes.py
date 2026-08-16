@@ -29,7 +29,18 @@ def login():
         senha = request.form.get('senha', '')
         if usuario == LOGIN_USER and check_password_hash(LOGIN_PASS_HASH, senha):
             session['usuario'] = usuario
-            flash(f'Bem-vindo, {usuario}!', 'success')
+            nome_bem_vindo = usuario
+            try:
+                conn = get_db()
+                row = conn.execute(
+                    "SELECT nome FROM usuarios WHERE usuario = %s", (usuario,)
+                ).fetchone()
+                conn.close()
+                if row and row['nome']:
+                    nome_bem_vindo = row['nome']
+            except Exception:
+                pass
+            flash(f'Bem-vindo, {nome_bem_vindo}!', 'success')
             return redirect(url_for('routes.index'))
         flash('Usuário ou senha inválidos.', 'danger')
     return render_template('login.html')
@@ -556,50 +567,6 @@ def exportar():
     return send_file(output,
         download_name=f"Relatorio_Equipamentos_EquipControl_{datetime.now().strftime('%d%m%Y')}.xlsx",
         as_attachment=True, mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-
-# -----------------------------------------------------------------------
-# LISTAGEM COM FILTRO
-# -----------------------------------------------------------------------
-@bp.route('/equipamentos')
-def listar_equipamentos() -> str:
-    status_filtro = request.args.get('status', '')
-    busca = request.args.get('q', '').strip()
-    conn = get_db()
-
-    wheres = []
-    params = []
-
-    if status_filtro:
-        wheres.append("status = %s")
-        params.append(status_filtro)
-
-    if busca:
-        wheres.append("codigo ILIKE %s")
-        params.append(f'%{busca}%')
-
-    where_clause = " WHERE " + " AND ".join(wheres) if wheres else ""
-
-    equipamentos = conn.execute(
-        f"SELECT * FROM equipamentos{where_clause} ORDER BY regional, tipo, codigo",
-        params
-    ).fetchall()
-    total_filtro = conn.execute(
-        f"SELECT COUNT(*) AS total FROM equipamentos{where_clause}",
-        params
-    ).fetchone()['total']
-
-    por_regional = conn.execute("""
-        SELECT regional, COUNT(*) as qtd FROM equipamentos GROUP BY regional ORDER BY qtd DESC
-    """).fetchall()
-    por_tipo = conn.execute("""
-        SELECT tipo, COUNT(*) as qtd FROM equipamentos GROUP BY tipo ORDER BY qtd DESC
-    """).fetchall()
-    total = conn.execute("SELECT COUNT(*) AS total FROM equipamentos").fetchone()['total']
-    conn.close()
-
-    return render_template('equipamentos.html',
-        equipamentos=equipamentos, por_regional=por_regional, por_tipo=por_tipo,
-        total=total, total_filtro=total_filtro, status_filtro=status_filtro, busca=busca)
 
 # -----------------------------------------------------------------------
 # API E DELETAR
