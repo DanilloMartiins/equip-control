@@ -60,7 +60,6 @@
                     <li class="nav-item"><a class="nav-link" href="/importar"><i class="bi bi-upload"></i> Importar</a></li>
                     <li class="nav-item"><a class="nav-link" href="/importar-smart"><i class="bi bi-magic"></i> Import Inteligente</a></li>
                     <li class="nav-item"><a class="nav-link" href="/relatorio"><i class="bi bi-file-earmark-text"></i> Relatório</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/exportar"><i class="bi bi-download"></i> Exportar Excel</a></li>
                     <li class="nav-item"><a class="nav-link" href="/envios"><i class="bi bi-send-fill"></i> Envios</a></li>
                     <li class="nav-item"><a class="nav-link" href="/pendencias"><i class="bi bi-exclamation-triangle-fill"></i> Pendências</a></li>
                 </ul>
@@ -71,11 +70,15 @@
     {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
     <div class="flash-msg">
+        {% set exibidas = [] %}
         {% for category, msg in messages %}
+        {% if msg not in exibidas %}
         <div class="alert alert-{{ category }} alert-dismissible fade show shadow" role="alert">
             {{ msg }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fechar"></button>
         </div>
+        {% endif %}
+        {% if msg not in exibidas %}{% set _ = exibidas.append(msg) %}{% endif %}
         {% endfor %}
     </div>
     {% endif %}
